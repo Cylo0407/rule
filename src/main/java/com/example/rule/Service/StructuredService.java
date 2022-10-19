@@ -1,5 +1,10 @@
 package com.example.rule.Service;
 
+import java.util.List;
+
 public interface StructuredService {
-    boolean structureRules();
+    /**
+     * 结构化内规
+     */
+    boolean structureRules(List<String> texts);
 }

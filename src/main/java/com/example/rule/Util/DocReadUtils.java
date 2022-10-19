@@ -16,7 +16,7 @@ import java.util.List;
 public class DocReadUtils {
 
     public static void main(String[] args) {
-        File file = new File("src/File/《贷款担保管理办法（试行）》.doc");
+        File file = new File("/Users/cyl/rule/src/File/标准版内规/运营管理部--制度/《大额支付系统业务管理办法》.doc");
 //        String path = "src/File/《贷款担保管理办法（试行）》.doc";
         List<String> texts = readWord(file);
         System.out.println(texts.size());
@@ -40,7 +40,8 @@ public class DocReadUtils {
                     //使用回车换行符分割字符串
                     String[] arry = buffer.split("\\r?\\n");
                     for (String string : arry) {
-                        linList.add(string);
+                        if (!string.equals(""))
+                            linList.add(string.trim());
                     }
                 }
             } else if (fileName.endsWith(".docx")) {
@@ -53,7 +54,8 @@ public class DocReadUtils {
                     //使用换行符分割字符串
                     String[] arry = buffer.split("\\r?\\n");
                     for (String string : arry) {
-                        linList.add(string);
+                        if (!string.equals(""))
+                            linList.add(string.trim());
                     }
                 }
             } else {

@@ -5,47 +5,36 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RuleSplitUtils {
     static char[] cnArr = new char[]{'一', '二', '三', '四', '五', '六', '七', '八', '九'};
 
-//    public static List<Pair<String, Boolean>> split(File file) {
-//        List<String> texts = new ArrayList<>();
-//        try {
-//            try (Scanner sc = new Scanner(new FileReader(file))) {
-//                while (sc.hasNextLine()) {  //按行读取字符串
-//                    texts.add(sc.nextLine());
-//                }
-//            }
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        return split(texts);
-//    }
-
-    public static List<Pair<String, Boolean>> split(List<String> texts) {
-        List<Pair<String, Boolean>> res = new ArrayList<>();
+    public static List<Pair<String, Integer>> split(List<String> texts) {
+        List<Pair<String, Integer>> res = new ArrayList<>();
         StringBuilder resLine = new StringBuilder();
         int chapter = 1;
         int section = 1;
         int index = 1;
         int currLine;
-        boolean isItem = false;
+//        boolean isItem = false;
+        Integer type = 0;
         for (currLine = 0; currLine < texts.size(); currLine++) {
             String tmpLine = texts.get(currLine).replaceAll("　", " ");
             tmpLine = tmpLine.replaceAll(" ", "");
             tmpLine = tmpLine.replaceAll("\\s", "");
-            if (tmpLine.startsWith("第一章")) {
-                chapter++;
-            }
-            if (tmpLine.startsWith("第一节")) {
-                section++;
-            }
-            if (tmpLine.startsWith("第一条")) {
+
+            String nextLine = texts.get(currLine + 1).replaceAll("　", " ");
+            nextLine = nextLine.replaceAll(" ", "");
+            nextLine = nextLine.replaceAll("\\s", "");
+
+            if (nextLine.startsWith("第一章") || nextLine.startsWith("第一节") || nextLine.startsWith("第一条")) {
+                resLine.append(texts.get(currLine));
+                resLine.append('\n');
+                currLine++;
                 break;
             }
-            resLine.append(texts.get(currLine));
-            resLine.append("\n");
         }
         for (; currLine < texts.size(); currLine++) {
             String line = texts.get(currLine);
@@ -53,31 +42,42 @@ public class RuleSplitUtils {
             tmpLine = tmpLine.replaceAll("\\s", "");
             String mark = "第" + arabicNumToChineseNum(index) + "条";
             if (tmpLine.startsWith("第" + arabicNumToChineseNum(chapter) + "章")) {
-                res.add(Pair.of(resLine.toString(), isItem));
+                res.add(Pair.of(resLine.toString(), type));
                 resLine = new StringBuilder(line);
                 chapter++;
-                isItem = false;
+//                isItem = false;
+                type = 1;
             } else if (tmpLine.startsWith(mark)) {
-                res.add(Pair.of(resLine.toString(), isItem));
+                res.add(Pair.of(resLine.toString(), type));
                 resLine = new StringBuilder(line);
                 index++;
-                isItem = true;
+//                isItem = true;
+                type = 3;
             } else if (tmpLine.startsWith("第" + arabicNumToChineseNum(section) + "节")) {
-                res.add(Pair.of(resLine.toString(), isItem));
+                res.add(Pair.of(resLine.toString(), type));
                 resLine = new StringBuilder(line);
                 section++;
-                isItem = false;
+//                isItem = false;
+                type = 2;
             } else if (tmpLine.startsWith("第一节")) {
-                res.add(Pair.of(resLine.toString(), isItem));
+                res.add(Pair.of(resLine.toString(), type));
                 resLine = new StringBuilder(line);
                 section = 2;
-                isItem = false;
+//                isItem = false;
+                type = 2;
+            } else if (tmpLine.startsWith("附件")) {
+                resLine.deleteCharAt(resLine.length() - 1);
+                break;
             } else {
+                if ((!checkcountname(line)) && currLine + 1 >= texts.size()) {
+                    break;
+                }
                 resLine.append(line);
             }
             resLine.append("\n");
         }
 
+        res.add(Pair.of(resLine.toString(), type));
         return res;
     }
 
@@ -120,12 +120,21 @@ public class RuleSplitUtils {
         return sd;
     }
 
+    private static boolean checkcountname(String countname) {
+        Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
+        Matcher m = p.matcher(countname);
+        if (m.find()) {
+            return true;
+        }
+        return false;
+    }
+
     public static void main(String[] args) {
-        File file = new File("src/File/《贷款担保管理办法（试行）》.doc");
+        File file = new File("/Users/cyl/rule/src/File/标准版内规/运营管理部--制度/《大额支付系统业务管理办法》.doc");
         List<String> texts = DocReadUtils.readWord(file);
 
-        List<Pair<String, Boolean>> splitRes = split(texts);
-        for (Pair<String, Boolean> pair : splitRes) {
+        List<Pair<String, Integer>> splitRes = split(texts);
+        for (Pair<String, Integer> pair : splitRes) {
             System.out.println(pair.getRight());
             System.out.println(pair.getLeft());
         }
