@@ -22,10 +22,10 @@ public class InputUtils {
      * @return 文本中的案例处罚部分
      */
     public ArrayList<String> dealAndStorePenaltyCaseContent(String line) {
-        ArrayList<String> res = new ArrayList<>();
-        res.add(line);
-        return res;
-//        return new ArrayList<>(Arrays.asList(line.split("[:\\s]")));
+//        ArrayList<String> res = new ArrayList<>();
+//        res.add(line);
+//        return res;
+        return new ArrayList<>(Arrays.asList(line.split("[:\\s]")));
     }
 
     /**
