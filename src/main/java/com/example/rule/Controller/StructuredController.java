@@ -36,7 +36,7 @@ public class StructuredController {
 
     @PostMapping("/input")
     public boolean structureInputs() {
-//        structuredService.preDealPenaltyCaseContents("/Users/cyl/Downloads/第4组迭代一/caseBase数据库/punishment.csv", 50);
+        structuredService.preDealPenaltyCaseContents("/Users/cyl/Downloads/第4组迭代一/caseBase数据库/punishment.csv", 50);
         structuredService.preDealInterpretationContents("/Users/cyl/Downloads/data/Interpretation", 10);
 
         return true;
