@@ -13,24 +13,20 @@ import javax.persistence.*;
 @Accessors(chain = true)
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "rule_structure")
+@Table(name = "penalty_case_structure")
 @NoArgsConstructor
-public class StructureResPO {
+public class PenaltyCaseStructureResPO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id; //内规条例切分的主键
+    private Integer id; //处罚案例条例切分的主键
 
     @Column(name = "title")
-    private String title; //内规标题
+    private String title; //处罚案例标题
 
-    @Column(name = "chapter")
-    private String chapter; //内规章名
-
-    @Column(name = "section")
-    private String section; //内规节名
+    @Column(name = "doc_id")
+    private String doc_id; //处罚案例文本号
 
     @Column(name = "text")
-    private String text; //内规具体某一条例内容
-
+    private String text; //处罚案例具体某一条例内容
 }
