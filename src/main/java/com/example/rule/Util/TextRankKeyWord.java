@@ -28,7 +28,7 @@ public class TextRankKeyWord {
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
     }
 
-    public static int countWord(String content){
+    public static int countWord(String content) {
         List<Term> termList = HanLP.segment(content);
 //        System.out.println(termList);
         List<String> wordList = new ArrayList<String>();
@@ -40,7 +40,7 @@ public class TextRankKeyWord {
         return wordList.size();
     }
 
-    public static Map<String,Float> getKeyword(String title, String content) {
+    public static Map<String, Float> getKeyword(String title, String content) {
         List<Term> termList = HanLP.segment(title + content);
 //        System.out.println(termList);
         List<String> wordList = new ArrayList<String>();
@@ -98,10 +98,10 @@ public class TextRankKeyWord {
             }
         });
 //        System.out.println(entryList);
-        Map<String,Float> result = new HashMap<>();
+        Map<String, Float> result = new HashMap<>();
         int num = Math.min(nKeyword, entryList.size());
         for (int i = 0; i < num; ++i) {
-            result.put(entryList.get(i).getKey(),entryList.get(i).getValue());
+            result.put(entryList.get(i).getKey(), entryList.get(i).getValue());
         }
         return result;
     }

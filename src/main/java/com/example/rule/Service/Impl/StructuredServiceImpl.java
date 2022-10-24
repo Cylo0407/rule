@@ -42,11 +42,20 @@ public class StructuredServiceImpl implements StructuredService {
         String section = null;
         String text = "";
 
-        for (Pair<String, Integer> split : splitRes) {
+        for (int i = 0; i < splitRes.size(); i++) {
+            Pair<String, Integer> split = splitRes.get(i);
             if (split.getRight() == 0) title = split.getLeft();
             else if (split.getRight() == 1) {
                 chapter = split.getLeft();
+                System.out.println(chapter);
                 section = null;
+                boolean isLast = true;
+                for (int j = i + 1; j < splitRes.size(); j++) {
+                    if (splitRes.get(j).getRight() == 1) {
+                        isLast = false;
+                    }
+                }
+                if (isLast) return true;
             } else if (split.getRight() == 2) section = split.getLeft();
             else if (split.getRight() == 3) {
                 text = split.getLeft();

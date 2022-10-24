@@ -1,5 +1,9 @@
 package com.example.rule.Service;
 
+import com.example.rule.Model.VO.MatchResVO;
+
+import java.util.List;
+
 public interface RetrieveService {
-    boolean retrieve();
+    List<MatchResVO> retrieve();
 }

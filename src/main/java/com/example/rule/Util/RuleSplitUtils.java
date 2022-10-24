@@ -130,7 +130,7 @@ public class RuleSplitUtils {
     }
 
     public static void main(String[] args) {
-        File file = new File("/Users/cyl/rule/src/File/标准版内规/运营管理部--制度/《大额支付系统业务管理办法》.doc");
+        File file = new File("/Users/cyl/Downloads/标准版内规/运营/《反洗钱管理办法》.doc");
         List<String> texts = DocReadUtils.readWord(file);
 
         List<Pair<String, Integer>> splitRes = split(texts);
@@ -139,7 +139,7 @@ public class RuleSplitUtils {
             System.out.println(pair.getLeft());
         }
 
-//        int num = 111;
+//        int num = 23;
 //        String num_chinese = arabicNumToChineseNum(num);
 //        System.out.println(num_chinese);
     }
