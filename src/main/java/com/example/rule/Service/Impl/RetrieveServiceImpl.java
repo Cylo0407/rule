@@ -53,10 +53,6 @@ public class RetrieveServiceImpl implements RetrieveService {
             Map<String, Integer> frequency1 = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
             // 2. 计算每个词的TF-IDF值
             Map<String, Double> weight1 = TextRankKeyWord.getKeyWords(frequency1, ruleStructureResPOS);
-//            System.out.println(interpretationStructureResPO.getText());
-//            for (Map.Entry<String, Double> me : weight1.entrySet()) {
-//                System.out.println(me.getKey() + "----" + me.getValue());
-//            }
             List<Pair<Integer, Double>> sims = new ArrayList<>();
 
             System.out.println("retreval");
