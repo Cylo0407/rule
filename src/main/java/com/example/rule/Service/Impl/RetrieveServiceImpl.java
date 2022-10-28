@@ -29,6 +29,11 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Resource
     InterpretationStructureRepository interpretationStructureRepository;
 
+    /**
+     * 计算每一条法规解释与内规之间的相似度
+     * TODO 可以优化的地方在于，循环中访问数据库和重复调用分词的部分
+     * @return resVO：每一条解释与内规之间的相似度
+     */
     @Override
     public List<MatchResVO> retrieve() {
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
@@ -36,13 +41,18 @@ public class RetrieveServiceImpl implements RetrieveService {
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
         List<MatchResVO> resVOS = new ArrayList<>();
 
-        Map<Integer, Map<String, Double>> weights = new HashMap<>();
+        Map<Integer, Map<String, Double>> tfidfOfRules = new HashMap<>();
+
         //每个内规的TF-IDF值存在这。
         System.out.println("get rule tfidf");
+        // 对内规库里检索到的每条内规执行如下：
         for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-            Map<String, Integer> frequency2 = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
-            Map<String, Double> weight2 = TextRankKeyWord.getKeyWords(frequency2, ruleStructureResPOS);
-            weights.put(ruleStructureResPO.getId(), weight2);
+            // TODO 每次都要调用大量分词请求，导致拖慢速度。可以考虑构建一个 所有内规都已完成预分词 的内规语料库，后续每次可以节省一半时间
+            // 获取一条内规的词频
+            Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+            // 计算一条内规的TF-IDF
+            Map<String, Double> tfidfOfRule = TextRankKeyWord.getKeyWords(ruleFrequency, ruleStructureResPOS);
+            tfidfOfRules.put(ruleStructureResPO.getId(), tfidfOfRule);
         }
         System.out.println("end rule");
 
@@ -50,38 +60,43 @@ public class RetrieveServiceImpl implements RetrieveService {
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 分词
-            Map<String, Integer> frequency1 = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
+            Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
             // 2. 计算每个词的TF-IDF值
-            Map<String, Double> weight1 = TextRankKeyWord.getKeyWords(frequency1, ruleStructureResPOS);
-            List<Pair<Integer, Double>> sims = new ArrayList<>();
+            Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, ruleStructureResPOS);
+            // sims：<ruleId，similarity>
+            List<Pair<Integer, Double>> similarityBetweenInputAndRules = new ArrayList<>();
 
             System.out.println("retreval");
-            for (Map.Entry<Integer, Map<String, Double>> entry : weights.entrySet()) {
+            for (Map.Entry<Integer, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
                 Map<String, Double> weight = entry.getValue();
                 Set<String> keywords = new HashSet<>();
+                // 计算向量模
                 double a = 0.0;
-                for (Map.Entry<String, Double> me : weight1.entrySet()) {
+                for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
                     keywords.add(me.getKey());
                     a += me.getValue() * me.getValue();
                 }
-                a = Math.log(a);
+//                a = Math.log(a);
+                a = Math.sqrt(a);
                 double b = 0.0;
                 for (Map.Entry<String, Double> me : weight.entrySet()) {
                     keywords.add(me.getKey());
                     b += me.getValue() * me.getValue();
                 }
-                b = Math.log(b);
+//                b = Math.log(b);
+                b = Math.sqrt(b);
 
+                // 计算向量点积
                 double ab = 0.0;
                 for (String word : keywords) {
-                    ab += weight1.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+                    ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
                 }
                 double cos = ab / a * b;
-                sims.add(Pair.of(entry.getKey(), cos));
+                similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
             }
             matchResVO.setInput_title(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getTitle());
-            matchResVO.setRuleMatchRes(getListBySim(sims));
+            matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
             resVOS.add(matchResVO);
         }
@@ -169,11 +184,14 @@ public class RetrieveServiceImpl implements RetrieveService {
         int count = 0;
         for (Pair<Integer, Double> pair : sims) {
             if (pair.getLeft() > 0) {
+                // TODO 尽量不要在循环中查询数据库，避免影响性能
                 RuleStructureResPO ruleStructureResPO = ruleStructureRepository.getById(pair.getLeft());
                 System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
+                // triple：<similarity,ruleId,ruleContent>
                 res.add(Triple.of(pair.getRight(), pair.getLeft(), ruleStructureResPO.getText()));
                 count++;
-                if (count >= 15) return res;
+//                // 限制输出15条相关内容
+//                if (count >= 15) return res;
             }
         }
         return res;
