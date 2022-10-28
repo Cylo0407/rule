@@ -36,10 +36,65 @@ public class RetrieveServiceImpl implements RetrieveService {
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
         List<MatchResVO> resVOS = new ArrayList<>();
 
-//        for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
+        Map<Integer, Map<String, Double>> weights = new HashMap<>();
+        //每个内规的TF-IDF值存在这。
+        System.out.println("get rule tfidf");
+        for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+            Map<String, Integer> frequency2 = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+            Map<String, Double> weight2 = TextRankKeyWord.getKeyWords(frequency2, ruleStructureResPOS);
+            weights.put(ruleStructureResPO.getId(), weight2);
+        }
+        System.out.println("end rule");
+
+
+        for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
+            MatchResVO matchResVO = new MatchResVO();
+            // 1. 分词
+            Map<String, Integer> frequency1 = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
+            // 2. 计算每个词的TF-IDF值
+            Map<String, Double> weight1 = TextRankKeyWord.getKeyWords(frequency1, ruleStructureResPOS);
+//            System.out.println(interpretationStructureResPO.getText());
+//            for (Map.Entry<String, Double> me : weight1.entrySet()) {
+//                System.out.println(me.getKey() + "----" + me.getValue());
+//            }
+            List<Pair<Integer, Double>> sims = new ArrayList<>();
+
+            System.out.println("retreval");
+            for (Map.Entry<Integer, Map<String, Double>> entry : weights.entrySet()) {
+                Map<String, Double> weight = entry.getValue();
+                Set<String> keywords = new HashSet<>();
+                double a = 0.0;
+                for (Map.Entry<String, Double> me : weight1.entrySet()) {
+                    keywords.add(me.getKey());
+                    a += me.getValue() * me.getValue();
+                }
+                a = Math.log(a);
+                double b = 0.0;
+                for (Map.Entry<String, Double> me : weight.entrySet()) {
+                    keywords.add(me.getKey());
+                    b += me.getValue() * me.getValue();
+                }
+                b = Math.log(b);
+
+                double ab = 0.0;
+                for (String word : keywords) {
+                    ab += weight1.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+                }
+                double cos = ab / a * b;
+                sims.add(Pair.of(entry.getKey(), cos));
+            }
+            matchResVO.setInput_title(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_text(interpretationStructureResPO.getTitle());
+            matchResVO.setRuleMatchRes(getListBySim(sims));
+
+            resVOS.add(matchResVO);
+        }
+
+//
+//        for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
 //            MatchResVO matchResVO = new MatchResVO();
 //            // 1. 提取关键词
-//            Map<String, Float> keywords = TextRankKeyWord.getKeyword(interpretationStructureResPO.getTitle(), interpretationStructureResPO.getText());
+//            Map<String, Float> keywords = TextRankKeyWord.getKeyword(penaltyCaseStructureResPO.getTitle(), penaltyCaseStructureResPO.getText());
 //            // 2. 关键词匹配
 //            List<Pair<Float, Integer>> scoresIndexPair = retrievalByTFIDF(keywords, ruleStructureResPOS);
 //            // 3. 分析结果
@@ -48,31 +103,12 @@ public class RetrieveServiceImpl implements RetrieveService {
 //                maxScore = scoresIndexPair.get(i).getLeft() > maxScore ? scoresIndexPair.get(i).getLeft() : maxScore;
 //            }
 //
-//            matchResVO.setInput_title(interpretationStructureResPO.getTitle());
-//            matchResVO.setInput_text(interpretationStructureResPO.getText());
+//            matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
+//            matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
 //            matchResVO.setRuleMatchRes(getListByTFIDF(ruleStructureResPOS, scoresIndexPair));
 //
 //            resVOS.add(matchResVO);
 //        }
-
-        for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
-            MatchResVO matchResVO = new MatchResVO();
-            // 1. 提取关键词
-            Map<String, Float> keywords = TextRankKeyWord.getKeyword(penaltyCaseStructureResPO.getTitle(), penaltyCaseStructureResPO.getText());
-            // 2. 关键词匹配
-            List<Pair<Float, Integer>> scoresIndexPair = retrievalByTFIDF(keywords, ruleStructureResPOS);
-            // 3. 分析结果
-            float maxScore = 0;
-            for (int i = 0; i < scoresIndexPair.size(); i++) {
-                maxScore = scoresIndexPair.get(i).getLeft() > maxScore ? scoresIndexPair.get(i).getLeft() : maxScore;
-            }
-
-            matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
-            matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
-            matchResVO.setRuleMatchRes(getListByTFIDF(ruleStructureResPOS, scoresIndexPair));
-
-            resVOS.add(matchResVO);
-        }
 
         return resVOS;
     }
@@ -123,24 +159,25 @@ public class RetrieveServiceImpl implements RetrieveService {
         return scoresIndexPair;
     }
 
-    private List<Triple<Float, Integer, String>> getListByTFIDF(List<RuleStructureResPO> ruleStructureResPOS, List<Pair<Float, Integer>> scoresIndexPair) {
-        Collections.sort(scoresIndexPair, new Comparator<Pair<Float, Integer>>() {
+    private List<Triple<Double, Integer, String>> getListBySim(List<Pair<Integer, Double>> sims) {
+        Collections.sort(sims, new Comparator<Pair<Integer, Double>>() {
             @Override
-            public int compare(Pair<Float, Integer> o1, Pair<Float, Integer> o2) {
-                if (o1.getLeft() > o2.getLeft()) return -1;
-                else if (o1.getLeft() < o2.getLeft()) return 1;
+            public int compare(Pair<Integer, Double> o1, Pair<Integer, Double> o2) {
+                if (o1.getRight() > o2.getRight()) return -1;
+                else if (o1.getRight() < o2.getRight()) return 1;
                 else return 0;
-//                return (o1.getLeft() - o2.getLeft() > 0 ? -1 : 1);
             }
         });
-        List<Triple<Float, Integer, String>> res = new ArrayList<>();
+
+        List<Triple<Double, Integer, String>> res = new ArrayList<>();
         int count = 0;
-        for (Pair<Float, Integer> pair : scoresIndexPair) {
+        for (Pair<Integer, Double> pair : sims) {
             if (pair.getLeft() > 0) {
-                RuleStructureResPO resPO = ruleStructureResPOS.get(pair.getRight());
-                res.add(Triple.of(pair.getLeft(), resPO.getId(), resPO.getText()));
+                RuleStructureResPO ruleStructureResPO = ruleStructureRepository.getById(pair.getLeft());
+                System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
+                res.add(Triple.of(pair.getRight(), pair.getLeft(), ruleStructureResPO.getText()));
                 count++;
-                if (count >= 10) return res;
+                if (count >= 15) return res;
             }
         }
         return res;
