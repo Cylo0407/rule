@@ -4,6 +4,7 @@ import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.common.Term;
+import org.apache.tomcat.util.digester.Rule;
 
 import java.util.*;
 
@@ -79,11 +80,11 @@ public class TextRankKeyWord {
     /**
      * 计算一条内规的TF-IDF值
      *
-     * @param frequency           用一条内规（内规标题+内规内容）构建出的词频映射表
-     * @param ruleStructureResPOS 内规库的结构化内容
+     * @param frequency        用一条内规（内规标题+内规内容）构建出的词频映射表
+     * @param frequencyOfRules 内规库中每个内规的词频集合
      * @return
      */
-    public static Map<String, Double> getKeyWords(Map<String, Integer> frequency, List<RuleStructureResPO> ruleStructureResPOS) {
+    public static Map<String, Double> getKeyWords(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
 //        计算词频最高的词
 //        int maxFreq = 0;
 //        for (String key : frequency.keySet()) {
@@ -107,9 +108,10 @@ public class TextRankKeyWord {
         for (String key : frequency.keySet()) {
             int cnt = 0;
             // 对内规库的每一条语料再分词计算DF
-            for (int i = 0; i < ruleStructureResPOS.size(); i++) {
-                // TODO 如果把语料库构建好的结果保存下来就可以优化掉这里
-                Map<String, Integer> map = TextRankKeyWord.getWordList(ruleStructureResPOS.get(i).getTitle(), ruleStructureResPOS.get(i).getText());
+            for (Map.Entry<RuleStructureResPO, Map<String, Integer>> me : frequencyOfRules.entrySet()) {
+                RuleStructureResPO ruleStructureResPO = me.getKey();
+                Map<String, Integer> map = me.getValue();
+//                Map<String, Integer> map = TextRankKeyWord.getWordList(ruleStructureResPOS.get(i).getTitle(), ruleStructureResPOS.get(i).getText());
 //                Map<String, Integer> map = TextRankKeyWord.getWordList(ruleStructureResPOS.get(i).getText(), ruleStructureResPOS.get(i).getText());
                 if (map.containsKey(key)) cnt++;
             }
@@ -118,7 +120,7 @@ public class TextRankKeyWord {
             // cnt为0则idf视为0
             double idf = 0.0;
             if (cnt > 0) {
-                idf = (double) ruleStructureResPOS.size()/cnt;
+                idf = (double) frequencyOfRules.size() / cnt;
             }
             weight.put(key, tf.get(key) * idf);
         }
