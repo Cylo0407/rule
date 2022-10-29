@@ -56,13 +56,14 @@ public class RetrieveServiceImpl implements RetrieveService {
             //存储内规词频
             frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
         }
+        System.out.println("end fre");
         for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
             // 计算一条内规的TF-IDF
             Map<String, Double> tfidfOfRule =
                     TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
             tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
         }
-        System.out.println("end rule");
+        System.out.println("end tfidf");
 
         //针对外部输入进行检索:
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
@@ -97,11 +98,11 @@ public class RetrieveServiceImpl implements RetrieveService {
                 for (String word : keywords) {
                     ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
                 }
-                double cos = ab / a * b;
+                double cos = ab / (a * b);
                 similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
             }
             matchResVO.setInput_title(interpretationStructureResPO.getTitle());
-            matchResVO.setInput_text(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
             resVOS.add(matchResVO);
@@ -189,13 +190,15 @@ public class RetrieveServiceImpl implements RetrieveService {
         List<Triple<Double, Integer, String>> res = new ArrayList<>();
         int count = 0;
         for (Pair<RuleStructureResPO, Double> pair : sims) {
-            RuleStructureResPO ruleStructureResPO = pair.getLeft();
-            System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
-            // triple：<similarity,ruleId,ruleContent>
-            res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), ruleStructureResPO.getText()));
-            count++;
+            if (pair.getRight() > 0) {
+                RuleStructureResPO ruleStructureResPO = pair.getLeft();
+                System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
+                // triple：<similarity,ruleId,ruleContent>
+                res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), ruleStructureResPO.getText()));
+                count++;
 //                // 限制输出15条相关内容
 //                if (count >= 15) return res;
+            }
         }
         return res;
     }

@@ -90,6 +90,7 @@ public class TextRankKeyWord {
 //        for (String key : frequency.keySet()) {
 //            if (frequency.get(key) > maxFreq) maxFreq = frequency.get(key);
 //        }
+
 //        计算一条内规的总词数
         int termsNum = 0;
         for (String termName : frequency.keySet()) {
@@ -99,8 +100,9 @@ public class TextRankKeyWord {
         // 计算TF：词频/单篇文章（语料段落）中的所有词数量总和
         Map<String, Double> tf = new HashMap<>();
         for (String key : frequency.keySet()) {
+//            System.out.println("frequency:" + frequency.get(key));
 //            tf.put(key, (double) frequency.get(key) / maxFreq);
-            tf.put(key, (double) (frequency.get(key) / termsNum));
+            tf.put(key, (double) frequency.get(key) / termsNum);
         }
 
         // 计算IDF：先计算DF，即一个词在所有文章中出现的次数（每有一篇文章/一段语料中出现记为1），再取倒数
@@ -121,6 +123,7 @@ public class TextRankKeyWord {
             double idf = 0.0;
             if (cnt > 0) {
                 idf = (double) frequencyOfRules.size() / cnt;
+//                System.out.println("idf:" + idf);
             }
             weight.put(key, tf.get(key) * idf);
         }
