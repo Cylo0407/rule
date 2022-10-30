@@ -7,6 +7,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Data
 @Entity
@@ -15,7 +16,7 @@ import javax.persistence.*;
 @DynamicUpdate
 @Table(name = "rule_structure")
 @NoArgsConstructor
-public class RuleStructureResPO {
+public class RuleStructureResPO implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

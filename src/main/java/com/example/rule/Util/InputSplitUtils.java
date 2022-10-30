@@ -28,7 +28,7 @@ public class InputSplitUtils {
      */
     public static ArrayList<String> dealAndStoreInterpretationOfLawsContent(String line) {
         //去掉text:前缀以及附件后缀以及空格
-        line = line.replace(" ", "").replace("text:", "");
+        line = line.replace(" ", "").replace("text:", "").replace(" ", "");
 
         //按三种不同的序号格式为文本添加分隔符
         Pattern form1 = Pattern.compile("[一二三四五六七八九十]、");

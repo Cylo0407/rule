@@ -8,6 +8,7 @@ import com.example.rule.Model.PO.PenaltyCaseStructureResPO;
 import com.example.rule.Model.PO.RuleStructureResPO;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Service.RetrieveService;
+import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 
@@ -40,6 +43,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
         List<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS = penaltyCaseStructureRepository.findAll();
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
+        interpretationStructureResPOS = interpretationStructureResPOS.subList(0, 3);
 
         List<MatchResVO> resVOS = new ArrayList<>();
 
@@ -48,20 +52,51 @@ public class RetrieveServiceImpl implements RetrieveService {
         //frequencyOfRules: <ruleId,<keyward,frequency>>
         Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
 
+        // TODO 把这一步计算出的结果保存下来，以免重复计算：需要保存词频表和tf-idf表
         System.out.println("start rule");
-        // 对内规库里检索到的每条内规执行如下：
-        for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-            // 获取一条内规的词频
-            Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
-            //存储内规词频
-            frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+        File rulesWordsFrequency = new File("src/main/resources/rules_info/rules_word_frequency.txt");
+        if (rulesWordsFrequency.exists()) {
+            try {
+                frequencyOfRules = (Map<RuleStructureResPO, Map<String, Integer>>) IOUtil.readObject(rulesWordsFrequency);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            // 对内规库里检索到的每条内规执行如下：
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 获取一条内规的词频
+                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                //存储内规词频
+                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+            }
+            try {
+                rulesWordsFrequency.createNewFile();
+                IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         System.out.println("end fre");
-        for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-            // 计算一条内规的TF-IDF
-            Map<String, Double> tfidfOfRule =
-                    TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
-            tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+        File rulesWordsTFIDF = new File("src/main/resources/rules_info/rules_word_tfidf.txt");
+        if (rulesWordsTFIDF.exists()) {
+            try {
+                tfidfOfRules = (Map<RuleStructureResPO, Map<String, Double>>) IOUtil.readObject(rulesWordsTFIDF);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 计算一条内规的TF-IDF
+                Map<String, Double> tfidfOfRule =
+                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+            }
+            try {
+                rulesWordsTFIDF.createNewFile();
+                IOUtil.writeObject(rulesWordsTFIDF, tfidfOfRules);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         System.out.println("end tfidf");
 

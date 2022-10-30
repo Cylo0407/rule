@@ -20,7 +20,7 @@ public class RuleSplitUtils {
         int currLine;
 //        boolean isItem = false;
         Integer type = 0;
-        for (currLine = 0; currLine < texts.size(); currLine++) {
+        for (currLine = 0; currLine < texts.size()-1; currLine++) {
             String tmpLine = texts.get(currLine).replaceAll("　", " ");
             tmpLine = tmpLine.replaceAll(" ", "");
             tmpLine = tmpLine.replaceAll("\\s", "");
