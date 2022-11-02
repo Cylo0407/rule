@@ -261,12 +261,11 @@ public class RetrieveServiceImpl implements RetrieveService {
                 }
                 matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
                 matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
-                matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws());
+                matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws()); //增加了一个外部输入的 toplaws 字段
                 matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
                 resVOS.add(matchResVO);
             }
-
 
 
         }
@@ -298,4 +297,5 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         return ruleOfSameTopLaws;
     }
+
 }
