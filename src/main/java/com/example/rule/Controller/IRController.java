@@ -2,6 +2,7 @@ package com.example.rule.Controller;
 
 
 import com.example.rule.Model.VO.MatchResVO;
+import com.example.rule.Model.VO.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +25,7 @@ public class IRController {
     }
 
     @PostMapping("/penaltyCaseTopLaws")
-    public List<MatchResVO> penaltyCaseTopLawsRetrieve() {
+    public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
         return retrieveService.penaltyCaseTopLawsRetrieve();
     }
 }

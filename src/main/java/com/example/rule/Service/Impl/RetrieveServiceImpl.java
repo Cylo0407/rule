@@ -3,6 +3,7 @@ package com.example.rule.Service.Impl;
 import com.example.rule.Dao.*;
 import com.example.rule.Model.PO.*;
 import com.example.rule.Model.VO.MatchResVO;
+import com.example.rule.Model.VO.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
@@ -184,11 +185,11 @@ public class RetrieveServiceImpl implements RetrieveService {
      * @return resVO: 每一条解释与内规之间的相似度
      */
     @Override
-    public List<MatchResVO> penaltyCaseTopLawsRetrieve() {
+    public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
         List<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOList = topLawsOfPenaltyCaseRepository.findAll();
         List<TopLawsOfRulePO> topLawsOfRulePOList = topLawsOfRuleRepository.findAll();
 
-        List<MatchResVO> resVOS = new ArrayList<>();
+        List<TopLawsMatchResVO> resVOS = new ArrayList<>();
 
         //tfidfOfRules: <ruleId,<keyward,tfidf>>
         Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
@@ -225,7 +226,7 @@ public class RetrieveServiceImpl implements RetrieveService {
 
 
             for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
-                MatchResVO matchResVO = new MatchResVO();
+                TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
                 // 1. 分词
                 Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", penaltyCaseStructureResPO.getText());
                 // 2. 计算每个词的TF-IDF值
@@ -260,6 +261,7 @@ public class RetrieveServiceImpl implements RetrieveService {
                 }
                 matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
                 matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
+                matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws());
                 matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
                 resVOS.add(matchResVO);
