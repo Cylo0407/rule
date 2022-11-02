@@ -102,6 +102,7 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         //针对外部输入进行检索:
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
+//        for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 分词
             Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
@@ -143,76 +144,11 @@ public class RetrieveServiceImpl implements RetrieveService {
             resVOS.add(matchResVO);
         }
 
-//
-//        for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
-//            MatchResVO matchResVO = new MatchResVO();
-//            // 1. 提取关键词
-//            Map<String, Float> keywords = TextRankKeyWord.getKeyword(penaltyCaseStructureResPO.getTitle(), penaltyCaseStructureResPO.getText());
-//            // 2. 关键词匹配
-//            List<Pair<Float, Integer>> scoresIndexPair = retrievalByTFIDF(keywords, ruleStructureResPOS);
-//            // 3. 分析结果
-//            float maxScore = 0;
-//            for (int i = 0; i < scoresIndexPair.size(); i++) {
-//                maxScore = scoresIndexPair.get(i).getLeft() > maxScore ? scoresIndexPair.get(i).getLeft() : maxScore;
-//            }
-//
-//            matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
-//            matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
-//            matchResVO.setRuleMatchRes(getListByTFIDF(ruleStructureResPOS, scoresIndexPair));
-//
-//            resVOS.add(matchResVO);
-//        }
-
         return resVOS;
     }
 
-    /**
-     * 根据TF-IDF检索匹配项
-     *
-     * @param keywords            关键词-权重
-     * @param ruleStructureResPOS 政策分割
-     * @return List<Pair < Float, Integer>> 列表，得分:index，index为ruleStructureResPOS对应
-     */
-    private List<Pair<Float, Integer>> retrievalByTFIDF(Map<String, Float> keywords, List<RuleStructureResPO> ruleStructureResPOS) {
-        List<Map<String, Float>> TFs = new ArrayList<>();
-        List<Pair<Float, Integer>> scoresIndexPair = new ArrayList<>();
-        Map<String, Integer> wordCounter = new HashMap<>();
-        for (String keyword : keywords.keySet()) {
-            wordCounter.put(keyword, 0);
-        }
-        int itemCnt = 0;
-        for (RuleStructureResPO resPO : ruleStructureResPOS) {
-            Map<String, Float> tf = new HashMap<>();
 
-            itemCnt++;
-            for (String keyword : keywords.keySet()) {
-                int cnt = countStr(resPO.getText(), keyword);
-                tf.put(keyword, (float) cnt / TextRankKeyWord.countWord(resPO.getText()));
-//                    tf.put(keyword, (float) cnt);
-                if (cnt > 0) {
-                    wordCounter.put(keyword, wordCounter.get(keyword) + 1);
-                }
-            }
-
-            TFs.add(tf);
-        }
-        for (int i = 0; i < ruleStructureResPOS.size(); i++) {
-            float score = 0;
-            for (String keyword : keywords.keySet()) {
-                float idf = (float) Math.log((float) itemCnt / (wordCounter.get(keyword) + 1));
-                if (idf < 0) {
-                    idf = 0;
-                }
-                score += keywords.get(keyword) * TFs.get(i).get(keyword) * idf;
-            }
-            scoresIndexPair.add(Pair.of(score, i));
-//            System.out.println("==============" + score + "==============");
-//            System.out.println(ruleStructureResPOS.get(i).getText());
-        }
-        return scoresIndexPair;
-    }
-
-    private List<Triple<Double, Integer, String>> getListBySim(List<Pair<RuleStructureResPO, Double>> sims) {
+    private List<Triple<Double, Integer, Pair<String, String>>> getListBySim(List<Pair<RuleStructureResPO, Double>> sims) {
         Collections.sort(sims, new Comparator<Pair<RuleStructureResPO, Double>>() {
             @Override
             public int compare(Pair<RuleStructureResPO, Double> o1, Pair<RuleStructureResPO, Double> o2) {
@@ -222,36 +158,19 @@ public class RetrieveServiceImpl implements RetrieveService {
             }
         });
 
-        List<Triple<Double, Integer, String>> res = new ArrayList<>();
+        List<Triple<Double, Integer, Pair<String, String>>> res = new ArrayList<>();
         int count = 0;
         for (Pair<RuleStructureResPO, Double> pair : sims) {
             if (pair.getRight() > 0) {
                 RuleStructureResPO ruleStructureResPO = pair.getLeft();
                 System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
                 // triple：<similarity,ruleId,ruleContent>
-                res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), ruleStructureResPO.getText()));
+                res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), Pair.of(ruleStructureResPO.getTitle(), ruleStructureResPO.getText())));
                 count++;
-//                // 限制输出15条相关内容
-//                if (count >= 15) return res;
+                // 限制输出15条相关内容
+                if (count >= 20) return res;
             }
         }
         return res;
-    }
-
-
-    /**
-     * count how many str2 is contained in str1
-     *
-     * @param str1
-     * @param str2
-     * @return
-     */
-    private int countStr(String str1, String str2) {
-        int counter = 0;
-        while (str1.contains(str2)) {
-            counter++;
-            str1 = str1.substring(str1.indexOf(str2) + str2.length());
-        }
-        return counter;
     }
 }

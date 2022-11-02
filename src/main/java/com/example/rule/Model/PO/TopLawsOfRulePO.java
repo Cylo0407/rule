@@ -1,7 +1,6 @@
 package com.example.rule.Model.PO;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -13,20 +12,17 @@ import javax.persistence.*;
 @Accessors(chain = true)
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "penalty_case_structure")
-@NoArgsConstructor
-public class PenaltyCaseStructureResPO {
+@Table(name = "rule_top_laws")
+public class TopLawsOfRulePO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id; //处罚案例条例切分的主键
+    private Integer id; //内规上位法集合主键
 
     @Column(name = "title")
-    private String title; //处罚案例标题
+    private String title; //内规标题
 
-    @Column(name = "doc_id")
-    private String docId; //处罚案例文本号
+    @Column(name = "laws")
+    private String laws; //内规标题
 
-    @Column(name = "text")
-    private String text; //处罚案例具体某一条例内容
 }

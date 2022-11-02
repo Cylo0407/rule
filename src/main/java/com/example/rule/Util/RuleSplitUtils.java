@@ -65,7 +65,7 @@ public class RuleSplitUtils {
                 section = 2;
 //                isItem = false;
                 type = 2;
-            } else if (tmpLine.startsWith("附件")) {
+            } else if (tmpLine.startsWith("附件") || tmpLine.startsWith("附表")) {
                 resLine.deleteCharAt(resLine.length() - 1);
                 break;
             } else {

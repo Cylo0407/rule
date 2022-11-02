@@ -20,6 +20,8 @@ public class StructuredController {
 
     @PostMapping("/rule")
     public boolean structureRules() {
+//        String filePath = "/Users/cyl/Downloads/标准版内规/信贷管理部--制度";
+//        String filePath = "/Users/cyl/Downloads/标准版内规/运营管理部--制度";
         String filePath = "/Users/cyl/Downloads/标准版内规/信贷";
         File dir = new File(filePath);
         File[] fs = dir.listFiles();

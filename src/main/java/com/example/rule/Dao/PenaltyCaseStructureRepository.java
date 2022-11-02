@@ -4,5 +4,4 @@ import com.example.rule.Model.PO.PenaltyCaseStructureResPO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PenaltyCaseStructureRepository extends JpaRepository<PenaltyCaseStructureResPO, Integer> {
-    PenaltyCaseStructureResPO save(PenaltyCaseStructureResPO penaltyCaseStructureResPO);
 }

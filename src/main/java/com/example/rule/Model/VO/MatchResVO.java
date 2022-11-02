@@ -10,5 +10,5 @@ import java.util.List;
 public class MatchResVO {
     String input_title;
     String input_text;
-    List<Triple<Double, Integer, String>> ruleMatchRes;
+    List<Triple<Double, Integer, Pair<String, String>>> ruleMatchRes;
 }

@@ -23,7 +23,7 @@ public class InterpretationStructureResPO {
     private String title;
 
     @Column(name = "doc_id")
-    private String doc_id;
+    private String docId;
 
     @Column(name = "text")
     private String text;
