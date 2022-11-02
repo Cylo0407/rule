@@ -1,23 +1,19 @@
 package com.example.rule.Service.Impl;
 
-import com.example.rule.Dao.InterpretationStructureRepository;
-import com.example.rule.Dao.PenaltyCaseStructureRepository;
-import com.example.rule.Dao.RuleStructureRepository;
-import com.example.rule.Model.PO.InterpretationStructureResPO;
-import com.example.rule.Model.PO.PenaltyCaseStructureResPO;
-import com.example.rule.Model.PO.RuleStructureResPO;
+import com.example.rule.Dao.*;
+import com.example.rule.Model.PO.*;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Service.RetrieveService;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.tomcat.util.digester.Rule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.*;
-import java.nio.file.Files;
 import java.util.*;
 
 
@@ -28,15 +24,22 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Resource
     RuleStructureRepository ruleStructureRepository;
     @Resource
+    TopLawsOfRuleRepository topLawsOfRuleRepository;
+    @Resource
     PenaltyCaseStructureRepository penaltyCaseStructureRepository;
     @Resource
+    TopLawsOfPenaltyCaseRepository topLawsOfPenaltyCaseRepository;
+    @Resource
     InterpretationStructureRepository interpretationStructureRepository;
+    @Resource
+    TopLawsOfInterpretationRepository topLawsOfInterpretationRepository;
+
 
     /**
      * 计算每一条法规解释与内规之间的相似度
      * TODO 可以优化的地方在于，循环中访问数据库和重复调用分词的部分
      *
-     * @return resVO：每一条解释与内规之间的相似度
+     * @return resVO: 每一条解释与内规之间的相似度
      */
     @Override
     public List<MatchResVO> retrieve() {
@@ -172,5 +175,70 @@ public class RetrieveServiceImpl implements RetrieveService {
             }
         }
         return res;
+    }
+
+
+    /**
+     * 计算具有相同上位法的每一条处罚案例与内规之间的相似度
+     *
+     * @return resVO: 每一条解释与内规之间的相似度
+     */
+    @Override
+    public List<MatchResVO> penaltyCaseTopLawsRetrieve() {
+        List<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOList = topLawsOfPenaltyCaseRepository.findAll();
+        List<TopLawsOfRulePO> topLawsOfRulePOList = topLawsOfRuleRepository.findAll();
+
+        List<MatchResVO> resVOS = new ArrayList<>();
+
+        //tfidfOfRules: <ruleId,<keyward,tfidf>>
+        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
+        //frequencyOfRules: <ruleId,<keyward,frequency>>
+        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
+
+        //遍历每整个处罚案例中的每个上位法，去找内规库中有相同上位法的内规
+        for (TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO : topLawsOfPenaltyCasePOList) { //对每一整个处罚案例
+            Set<TopLawsOfRulePO> ruleOfSameTopLaws =
+                    getRuleOfSameTopLaws(topLawsOfPenaltyCasePO, topLawsOfRulePOList); //如果用相同上位法就add进来
+
+            List<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
+            for (TopLawsOfRulePO topLawsOfRulePO : ruleOfSameTopLaws) {
+                ruleStructureResPOS.addAll(ruleStructureRepository.findByTitle(topLawsOfRulePO.getTitle()));
+            }
+            List<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS =
+                    penaltyCaseStructureRepository.findByDocId(topLawsOfPenaltyCasePO.getDocId());
+
+
+            //TODO 开始计算
+
+
+
+        }
+
+        return null;
+    }
+
+
+    /**
+     * 遍历处罚案例中的上位法，去找内规库中有相同上位法的内规
+     *
+     * @param topLawsOfPenaltyCasePO: 一个处罚库
+     * @param topLawsOfRulePOList:    内规库集合
+     * @return ruleOfSameTopLaws: 与对应处罚库具有相同上位法的内规集合
+     */
+    private Set<TopLawsOfRulePO> getRuleOfSameTopLaws(TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO, List<TopLawsOfRulePO> topLawsOfRulePOList) {
+        String[] penaltyCaseLawList = topLawsOfPenaltyCasePO.getLaws().split("、");
+        Set<TopLawsOfRulePO> ruleOfSameTopLaws = new HashSet<>();
+
+        for (String penaltyCaseLaw : penaltyCaseLawList) { //对每一整个处罚案例中的每个上位法
+            for (TopLawsOfRulePO topLawsOfRulePO : topLawsOfRulePOList) { //对每一整个内规
+                if (ruleOfSameTopLaws.contains(topLawsOfRulePO)) continue;//如果集合中有过了，直接看下一个.
+                List<String> ruleLawList = Arrays.asList(topLawsOfRulePO.getLaws().split("、"));
+                if (ruleLawList.contains(penaltyCaseLaw)) {
+                    ruleOfSameTopLaws.add(topLawsOfRulePO);
+                }
+            }
+        }
+
+        return ruleOfSameTopLaws;
     }
 }

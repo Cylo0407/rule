@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface RetrieveService {
     List<MatchResVO> retrieve();
+
+    List<MatchResVO> penaltyCaseTopLawsRetrieve();
 }
