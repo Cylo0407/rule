@@ -8,7 +8,6 @@ import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.tomcat.util.digester.Rule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +101,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             }
         }
         System.out.println("end tfidf");
+
 
         //针对外部输入进行检索:
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
@@ -209,13 +209,67 @@ public class RetrieveServiceImpl implements RetrieveService {
                     penaltyCaseStructureRepository.findByDocId(topLawsOfPenaltyCasePO.getDocId());
 
 
-            //TODO 开始计算
+            //开始计算相似度的步骤
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 获取一条内规的词频
+                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                //存储内规词频
+                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+            }
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 计算一条内规的TF-IDF
+                Map<String, Double> tfidfOfRule =
+                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+            }
+
+
+            for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
+                MatchResVO matchResVO = new MatchResVO();
+                // 1. 分词
+                Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", penaltyCaseStructureResPO.getText());
+                // 2. 计算每个词的TF-IDF值
+                Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, frequencyOfRules);
+                // sims：<ruleId，similarity>
+                List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
+
+                for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
+                    Map<String, Double> weight = entry.getValue();
+                    Set<String> keywords = new HashSet<>();
+                    // 计算向量模
+                    double a = 0.0;
+                    for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
+                        keywords.add(me.getKey());
+                        a += me.getValue() * me.getValue();
+                    }
+                    a = Math.sqrt(a);
+                    double b = 0.0;
+                    for (Map.Entry<String, Double> me : weight.entrySet()) {
+                        keywords.add(me.getKey());
+                        b += me.getValue() * me.getValue();
+                    }
+                    b = Math.sqrt(b);
+
+                    // 计算向量点积
+                    double ab = 0.0;
+                    for (String word : keywords) {
+                        ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+                    }
+                    double cos = ab / (a * b);
+                    similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
+                }
+                matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
+                matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
+                matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
+
+                resVOS.add(matchResVO);
+            }
 
 
 
         }
 
-        return null;
+        return resVOS;
     }
 
 
