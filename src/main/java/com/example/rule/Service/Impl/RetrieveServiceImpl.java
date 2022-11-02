@@ -195,6 +195,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         //frequencyOfRules: <ruleId,<keyward,frequency>>
         Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
 
+
         //遍历每整个处罚案例中的每个上位法，去找内规库中有相同上位法的内规
         for (TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO : topLawsOfPenaltyCasePOList) { //对每一整个处罚案例
             Set<TopLawsOfRulePO> ruleOfSameTopLaws =
