@@ -22,15 +22,18 @@ public class StructuredController {
     public boolean structureRules() {
 //        String filePath = "/Users/cyl/Downloads/标准版内规/信贷管理部--制度";
 //        String filePath = "/Users/cyl/Downloads/标准版内规/运营管理部--制度";
-        String filePath = "/Users/cyl/Downloads/标准版内规/运营";
+        String filePath = "/Users/cyl/Downloads/标准版内规";
         File dir = new File(filePath);
         File[] fs = dir.listFiles();
-        for (File file : fs) {
-            String fileName = file.getName();
-            if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
-                System.out.println(fileName);
-                List<String> texts = DocReadUtils.readWord(file);
-                structuredService.structureRules(texts);
+        for (File f : fs) {
+            File[] rulesPart = f.listFiles();
+            for (File file : rulesPart) {
+                String fileName = file.getName();
+                if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
+                    System.out.println(fileName);
+                    List<String> texts = DocReadUtils.readWord(file);
+                    structuredService.structureRules(texts, fileName);
+                }
             }
         }
         return true;
