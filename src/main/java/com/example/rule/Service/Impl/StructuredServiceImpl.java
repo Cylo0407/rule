@@ -12,10 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,65 +34,74 @@ public class StructuredServiceImpl implements StructuredService {
     @Resource
     TopLawsOfInterpretationRepository topLawsOfInterpretationRepository;
 
+    /**
+     * 结构化内规并提取上位法
+     *
+     * @param texts doc文本
+     * @return true
+     */
     @Override
-    public boolean structureRules(List<String> texts) {
-        List<Pair<String, Integer>> splitRes = RuleSplitUtils.split(texts);
-        String title = "";
+    public boolean structureRules(List<String> texts, String title) {
+        // 拿取所有切分后的内规文本
+        List<Pair<String, Integer>> splitRulesInfo = RuleSplitUtils.split(texts);
+
+        ArrayList<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
+
+        TopLawsOfRulePO topLawsOfRulePO = new TopLawsOfRulePO();
+        // TODO 运用一下这部分文字
+        String textBeforeChapter = "";
         String chapter = "";
         String section = null;
         String text = "";
 
-        Pattern pattern = Pattern.compile("《(.*?)》");
-//        TopLawsOfRulePO topLawsOfRulePO = new TopLawsOfRulePO();
-        StringBuilder laws = new StringBuilder();
+        HashSet<String> relatedLaws = new HashSet<>();
+        for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
+            switch (ruleInfo.getRight()) {
+                case 0:
+                    // 非章节内容
+                    textBeforeChapter = ruleInfo.getLeft();
+                    topLawsOfRulePO.setTitle(title);
+                    break;
+                case 1:
+                    // 第x章
+                    chapter = ruleInfo.getLeft();
+                    section = null;
+                    break;
+                case 2:
+                    // 第x节
+                    section = ruleInfo.getLeft();
+                    break;
+                case 3:
+                    // 第x条
+                    text = ruleInfo.getLeft();
+                    findAndStoreArticleTitleFromText(text, relatedLaws);
 
-
-        for (int i = 0; i < splitRes.size(); i++) {
-            Pair<String, Integer> split = splitRes.get(i);
-            if (split.getRight() == 0) {
-                title = split.getLeft();
-                topLawsOfRuleRepository.save(new TopLawsOfRulePO().setTitle(title));
-            } else if (split.getRight() == 1) {
-                chapter = split.getLeft();
-                System.out.println(chapter);
-                section = null;
-                boolean isLast = true;
-                for (int j = i + 1; j < splitRes.size(); j++) {
-                    if (splitRes.get(j).getRight() == 1) {
-                        isLast = false;
-                    }
-                }
-                if (isLast) return true;
-            } else if (split.getRight() == 2) section = split.getLeft();
-            else if (split.getRight() == 3) {
-                text = split.getLeft();
-
-                Matcher matcher = pattern.matcher(text);
-                while (matcher.find()) {
-                    String law = matcher.group(1);
-                    System.out.println(law);
-                    laws.append(law).append('、');
-                    TopLawsOfRulePO topLawsOfRulePO = topLawsOfRuleRepository.findByTitle(title);
-                    topLawsOfRulePO.setLaws(laws.toString());
-                    topLawsOfRuleRepository.save(topLawsOfRulePO);
-                }
-
-                RuleStructureResPO ruleStructureResPO = new RuleStructureResPO()
-                        .setTitle(title)
-                        .setChapter(chapter)
-                        .setSection(section)
-                        .setText(text);
-                ruleStructureRepository.save(ruleStructureResPO);
+                    ruleStructureResPOS.add(new RuleStructureResPO()
+                            .setTitle(title)
+                            .setChapter(chapter)
+                            .setSection(section)
+                            .setText(text));
+                    break;
+                default:
+                    break;
             }
         }
 
+        topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
+        ruleStructureRepository.saveAll(ruleStructureResPOS);
         return true;
     }
 
 
+    /**
+     * 结构化指定数目的处罚案例文本
+     *
+     * @param srcPath 存储案例的文件路径
+     * @param num     获取文本的条数
+     * @return true
+     */
     @Override
     public boolean preDealPenaltyCaseContents(String srcPath, Integer num) {
-        System.out.println("start");
         try {
             ArrayList<ArrayList<String>> penaltyCaseInfos = new ArrayList<>();
             ArrayList<ArrayList<String>> penaltyCaseContents = new ArrayList<>();
@@ -109,47 +115,34 @@ public class StructuredServiceImpl implements StructuredService {
                 penaltyCaseContents.add(InputSplitUtils.dealAndStorePenaltyCaseContent(caseLine.get(3)));
             }
 
-//            InputSplitUtils.writePenaltyContentsToDatabase(penaltyCaseInfos, penaltyCaseContents);
-            System.out.println("write");
+            ArrayList<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOS = new ArrayList<>();
+            ArrayList<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS = new ArrayList<>();
             for (int i = 0; i < num; i++) {
-                Pattern pattern = Pattern.compile("《(.*?)》");
-                StringBuffer laws = new StringBuffer();
+                TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO = new TopLawsOfPenaltyCasePO();
 
                 String title = penaltyCaseInfos.get(i).get(1);
-                System.out.println(title);
                 String docId = penaltyCaseInfos.get(i).get(2);
-                System.out.println(docId);
-                topLawsOfPenaltyCaseRepository.save(new TopLawsOfPenaltyCasePO().setTitle(title).setDocId(docId));
-                Matcher titleMatcher = pattern.matcher(title);
-                while (titleMatcher.find()) {
-                    String law = titleMatcher.group(1);
-                    System.out.println(law);
-                    laws.append(law).append('、');
-                    TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO = topLawsOfPenaltyCaseRepository.findByDocId(docId);
-                    topLawsOfPenaltyCaseRepository.save(topLawsOfPenaltyCasePO.setLaws(laws.toString()));
-                }
+                topLawsOfPenaltyCasePO.setTitle(title).setDocId(docId);
+
+                HashSet<String> relatedLaws = new HashSet<>();
+                findAndStoreArticleTitleFromText(title, relatedLaws);
+
                 ArrayList<String> penaltyCaseContent = penaltyCaseContents.get(i);
-                System.out.println(penaltyCaseContent.size());
+                // TODO 为什么j=1？j=0时case里是啥
                 for (int j = 1; j < penaltyCaseContent.size(); j++) {
                     String context = penaltyCaseContent.get(j);
-                    System.out.println(context);
-
-                    Matcher ctxMatcher = pattern.matcher(context);
-                    while (ctxMatcher.find()) {
-                        String law = ctxMatcher.group(1);
-                        System.out.println(law);
-                        laws.append(law).append('、');
-                        TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO = topLawsOfPenaltyCaseRepository.findByDocId(docId);
-                        topLawsOfPenaltyCaseRepository.save(topLawsOfPenaltyCasePO.setLaws(laws.toString()));
-                    }
-
-                    PenaltyCaseStructureResPO structureResPO = new PenaltyCaseStructureResPO()
+                    findAndStoreArticleTitleFromText(context, relatedLaws);
+                    penaltyCaseStructureResPOS.add(new PenaltyCaseStructureResPO()
                             .setTitle(title)
                             .setDocId(docId)
-                            .setText(context);
-                    penaltyCaseStructureRepository.save(structureResPO);
+                            .setText(context));
                 }
+                topLawsOfPenaltyCasePOS.add(topLawsOfPenaltyCasePO.setLaws(relatedLaws));
             }
+
+            topLawsOfPenaltyCaseRepository.saveAll(topLawsOfPenaltyCasePOS);
+            penaltyCaseStructureRepository.saveAll(penaltyCaseStructureResPOS);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -157,9 +150,14 @@ public class StructuredServiceImpl implements StructuredService {
         return true;
     }
 
+    /**
+     *
+     * @param srcDir 存储解读文本的目录
+     * @param num    获取文本的数量
+     * @return true
+     */
     @Override
     public boolean preDealInterpretationContents(String srcDir, Integer num) {
-        System.out.println("start");
         try {
             ArrayList<ArrayList<String>> interpretationOfLawsInfos = new ArrayList<>();
             ArrayList<ArrayList<String>> interpretationOfLawsContents = new ArrayList<>();
@@ -183,54 +181,54 @@ public class StructuredServiceImpl implements StructuredService {
                 interpretationOfLawsInfos.add(interpretationOfLawsInfo);
             }
 
-//            InputSplitUtils.writeInterpretationContentsToDatabase(interpretationOfLawsInfos, interpretationOfLawsContents);
-            System.out.println("write");
+            ArrayList<TopLawsOfInterpretationPO> topLawsOfInterpretationPOS = new ArrayList<>();
+            ArrayList<InterpretationStructureResPO> interpretationStructureResPOS = new ArrayList<>();
             for (int i = 0; i < num; i++) {
-                Pattern pattern = Pattern.compile("《(.*?)》");
-                StringBuffer laws = new StringBuffer();
+                TopLawsOfInterpretationPO topLawsOfInterpretationPO = new TopLawsOfInterpretationPO();
 
                 String title = interpretationOfLawsInfos.get(i).get(0);
-                System.out.println(title);
                 String docId = interpretationOfLawsInfos.get(i).get(1);
-                System.out.println(docId);
-                topLawsOfInterpretationRepository.save(new TopLawsOfInterpretationPO().setTitle(title).setDocId(docId));
-                Matcher titleMatcher = pattern.matcher(title);
-                while (titleMatcher.find()) {
-                    String law = titleMatcher.group(1);
-                    System.out.println(law);
-                    laws.append(law).append('、');
-                    TopLawsOfInterpretationPO topLawsOfInterpretationPO = topLawsOfInterpretationRepository.findByDocId(docId);
-                    topLawsOfInterpretationRepository.save(topLawsOfInterpretationPO.setLaws(laws.toString()));
-                }
+                topLawsOfInterpretationPO.setTitle(title).setDocId(docId);
+
+                HashSet<String> relatedLaws = new HashSet<>();
+                findAndStoreArticleTitleFromText(title, relatedLaws);
+
                 ArrayList<String> interpretationOfLawsContent = interpretationOfLawsContents.get(i);
-                System.out.println(interpretationOfLawsContent.size());
                 for (int j = 0; j < interpretationOfLawsContent.size(); j++) {
                     String context = interpretationOfLawsContent.get(j);
-                    System.out.println(context);
-
-                    Matcher ctxMatcher = pattern.matcher(context);
-                    while (ctxMatcher.find()) {
-                        String law = ctxMatcher.group(1);
-                        System.out.println(law);
-                        laws.append(law).append('、');
-                        TopLawsOfInterpretationPO topLawsOfInterpretationPO = topLawsOfInterpretationRepository.findByDocId(docId);
-                        topLawsOfInterpretationRepository.save(topLawsOfInterpretationPO.setLaws(laws.toString()));
-                    }
-
-
-                    InterpretationStructureResPO structureResPO = new InterpretationStructureResPO()
+                    findAndStoreArticleTitleFromText(context,relatedLaws);
+                    interpretationStructureResPOS.add(new InterpretationStructureResPO()
                             .setTitle(title)
                             .setDocId(docId)
-                            .setText(context);
-                    interpretationStructureRepository.save(structureResPO);
+                            .setText(context));
                 }
+                topLawsOfInterpretationPOS.add(topLawsOfInterpretationPO.setLaws(relatedLaws));
             }
+            topLawsOfInterpretationRepository.saveAll(topLawsOfInterpretationPOS);
+            interpretationStructureRepository.saveAll(interpretationStructureResPOS);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         return true;
+    }
+
+    /**
+     * 查找文本中的文章名并存储
+     *
+     * @param text          待查找的文本
+     * @param articleTitles 文章标题集合
+     */
+    private void findAndStoreArticleTitleFromText(String text, HashSet<String> articleTitles) {
+        Pattern pattern = Pattern.compile("《[^》]+》");
+        Matcher titleMatcher = pattern.matcher(text);
+        while (titleMatcher.find()) {
+            String law = titleMatcher.group();
+            if (law.length() > 4) {
+                articleTitles.add(law);
+            }
+        }
     }
 
 }

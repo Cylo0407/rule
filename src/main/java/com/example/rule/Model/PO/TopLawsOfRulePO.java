@@ -25,4 +25,14 @@ public class TopLawsOfRulePO {
     @Column(name = "laws")
     private String laws; //内规标题
 
+    public TopLawsOfRulePO setLaws(String laws) {
+        this.laws = laws;
+        return this;
+    }
+
+    public TopLawsOfRulePO setLaws(Iterable<String> laws) {
+        this.laws = String.join("|", laws);
+        return this;
+    }
+
 }

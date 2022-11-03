@@ -27,4 +27,14 @@ public class TopLawsOfInterpretationPO {
 
     @Column(name = "laws")
     private String laws;
+
+    public TopLawsOfInterpretationPO setLaws(String laws) {
+        this.laws = laws;
+        return this;
+    }
+
+    public TopLawsOfInterpretationPO setLaws(Iterable<String> laws) {
+        this.laws = String.join("|", laws);
+        return this;
+    }
 }

@@ -8,7 +8,7 @@ public interface StructuredService {
      *
      * @param texts doc文本
      */
-    boolean structureRules(List<String> texts);
+    boolean structureRules(List<String> texts, String title);
 
     /**
      * 结构化指定数目的处罚案例文本

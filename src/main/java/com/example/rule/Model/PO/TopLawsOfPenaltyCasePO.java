@@ -27,4 +27,14 @@ public class TopLawsOfPenaltyCasePO {
 
     @Column(name = "laws")
     private String laws; //处罚案例库标题
+
+    public TopLawsOfPenaltyCasePO setLaws(String laws) {
+        this.laws = laws;
+        return this;
+    }
+
+    public TopLawsOfPenaltyCasePO setLaws(Iterable<String> laws) {
+        this.laws = String.join("|", laws);
+        return this;
+    }
 }
