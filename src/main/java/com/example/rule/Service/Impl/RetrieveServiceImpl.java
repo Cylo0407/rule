@@ -1,12 +1,9 @@
 package com.example.rule.Service.Impl;
 
-import com.example.rule.Dao.InterpretationStructureRepository;
-import com.example.rule.Dao.PenaltyCaseStructureRepository;
-import com.example.rule.Dao.RuleStructureRepository;
-import com.example.rule.Model.PO.InterpretationStructureResPO;
-import com.example.rule.Model.PO.PenaltyCaseStructureResPO;
-import com.example.rule.Model.PO.RuleStructureResPO;
+import com.example.rule.Dao.*;
+import com.example.rule.Model.PO.*;
 import com.example.rule.Model.VO.MatchResVO;
+import com.example.rule.Model.VO.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
@@ -17,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.*;
-import java.nio.file.Files;
 import java.util.*;
 
 
@@ -28,15 +24,22 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Resource
     RuleStructureRepository ruleStructureRepository;
     @Resource
+    TopLawsOfRuleRepository topLawsOfRuleRepository;
+    @Resource
     PenaltyCaseStructureRepository penaltyCaseStructureRepository;
     @Resource
+    TopLawsOfPenaltyCaseRepository topLawsOfPenaltyCaseRepository;
+    @Resource
     InterpretationStructureRepository interpretationStructureRepository;
+    @Resource
+    TopLawsOfInterpretationRepository topLawsOfInterpretationRepository;
+
 
     /**
      * 计算每一条法规解释与内规之间的相似度
      * TODO 可以优化的地方在于，循环中访问数据库和重复调用分词的部分
      *
-     * @return resVO：每一条解释与内规之间的相似度
+     * @return resVO: 每一条解释与内规之间的相似度
      */
     @Override
     public List<MatchResVO> retrieve() {
@@ -99,6 +102,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             }
         }
         System.out.println("end tfidf");
+
 
         //针对外部输入进行检索:
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
@@ -173,4 +177,125 @@ public class RetrieveServiceImpl implements RetrieveService {
         }
         return res;
     }
+
+
+    /**
+     * 计算具有相同上位法的每一条处罚案例与内规之间的相似度
+     *
+     * @return resVO: 每一条解释与内规之间的相似度
+     */
+    @Override
+    public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
+        List<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOList = topLawsOfPenaltyCaseRepository.findAll();
+        List<TopLawsOfRulePO> topLawsOfRulePOList = topLawsOfRuleRepository.findAll();
+
+        List<TopLawsMatchResVO> resVOS = new ArrayList<>();
+
+        //tfidfOfRules: <ruleId,<keyward,tfidf>>
+        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
+        //frequencyOfRules: <ruleId,<keyward,frequency>>
+        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
+
+
+        //遍历每整个处罚案例中的每个上位法，去找内规库中有相同上位法的内规
+        for (TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO : topLawsOfPenaltyCasePOList) { //对每一整个处罚案例
+            Set<TopLawsOfRulePO> ruleOfSameTopLaws =
+                    getRuleOfSameTopLaws(topLawsOfPenaltyCasePO, topLawsOfRulePOList); //如果用相同上位法就add进来
+
+            List<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
+            for (TopLawsOfRulePO topLawsOfRulePO : ruleOfSameTopLaws) {
+                ruleStructureResPOS.addAll(ruleStructureRepository.findByTitle(topLawsOfRulePO.getTitle()));
+            }
+            List<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS =
+                    penaltyCaseStructureRepository.findByDocId(topLawsOfPenaltyCasePO.getDocId());
+
+
+            //开始计算相似度的步骤
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 获取一条内规的词频
+                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                //存储内规词频
+                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+            }
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 计算一条内规的TF-IDF
+                Map<String, Double> tfidfOfRule =
+                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+            }
+
+
+            for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
+                TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
+                // 1. 分词
+                Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", penaltyCaseStructureResPO.getText());
+                // 2. 计算每个词的TF-IDF值
+                Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, frequencyOfRules);
+                // sims：<ruleId，similarity>
+                List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
+
+                for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
+                    Map<String, Double> weight = entry.getValue();
+                    Set<String> keywords = new HashSet<>();
+                    // 计算向量模
+                    double a = 0.0;
+                    for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
+                        keywords.add(me.getKey());
+                        a += me.getValue() * me.getValue();
+                    }
+                    a = Math.sqrt(a);
+                    double b = 0.0;
+                    for (Map.Entry<String, Double> me : weight.entrySet()) {
+                        keywords.add(me.getKey());
+                        b += me.getValue() * me.getValue();
+                    }
+                    b = Math.sqrt(b);
+
+                    // 计算向量点积
+                    double ab = 0.0;
+                    for (String word : keywords) {
+                        ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+                    }
+                    double cos = ab / (a * b);
+                    similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
+                }
+                matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
+                matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
+                matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws()); //增加了一个外部输入的 toplaws 字段
+                matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
+
+                resVOS.add(matchResVO);
+            }
+
+
+        }
+
+        return resVOS;
+    }
+
+
+    /**
+     * 遍历处罚案例中的上位法，去找内规库中有相同上位法的内规
+     *
+     * @param topLawsOfPenaltyCasePO: 一个处罚库
+     * @param topLawsOfRulePOList:    内规库集合
+     * @return ruleOfSameTopLaws: 与对应处罚库具有相同上位法的内规集合
+     */
+    private Set<TopLawsOfRulePO> getRuleOfSameTopLaws(TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO, List<TopLawsOfRulePO> topLawsOfRulePOList) {
+        String[] penaltyCaseLawList = topLawsOfPenaltyCasePO.getLaws().split("、");
+        Set<TopLawsOfRulePO> ruleOfSameTopLaws = new HashSet<>();
+
+        for (String penaltyCaseLaw : penaltyCaseLawList) { //对每一整个处罚案例中的每个上位法
+            for (TopLawsOfRulePO topLawsOfRulePO : topLawsOfRulePOList) { //对每一整个内规
+                if (ruleOfSameTopLaws.contains(topLawsOfRulePO)) continue;//如果集合中有过了，直接看下一个.
+                List<String> ruleLawList = Arrays.asList(topLawsOfRulePO.getLaws().split("、"));
+                if (ruleLawList.contains(penaltyCaseLaw)) {
+                    ruleOfSameTopLaws.add(topLawsOfRulePO);
+                }
+            }
+        }
+
+        return ruleOfSameTopLaws;
+    }
+
 }
