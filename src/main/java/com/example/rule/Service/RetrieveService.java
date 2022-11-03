@@ -9,4 +9,6 @@ public interface RetrieveService {
     List<MatchResVO> retrieve();
 
     List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve();
+
+    List<TopLawsMatchResVO> interpretationTopLawsRetrieve();
 }

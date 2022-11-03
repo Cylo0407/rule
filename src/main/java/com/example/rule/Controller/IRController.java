@@ -28,4 +28,9 @@ public class IRController {
     public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
         return retrieveService.penaltyCaseTopLawsRetrieve();
     }
+
+    @PostMapping("/interpretationTopLaws")
+    public List<TopLawsMatchResVO> InterpretationTopLawsRetrieve() {
+        return retrieveService.interpretationTopLawsRetrieve();
+    }
 }

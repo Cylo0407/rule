@@ -26,6 +26,9 @@ public class StructuredController {
         File dir = new File(filePath);
         File[] fs = dir.listFiles();
         for (File f : fs) {
+            System.out.println("dirName: " + f.getName());
+            if (f.getName().equals(".DS_Store")) continue;
+
             File[] rulesPart = f.listFiles();
             for (File file : rulesPart) {
                 String fileName = file.getName();
