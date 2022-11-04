@@ -25,4 +25,6 @@ public interface StructuredService {
      * @param num    获取文本的数量
      */
     boolean preDealInterpretationContents(String srcDir, Integer num);
+
+
 }

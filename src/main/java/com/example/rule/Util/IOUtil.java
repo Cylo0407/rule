@@ -2,11 +2,9 @@ package com.example.rule.Util;
 
 import com.example.rule.Model.PO.RuleStructureResPO;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 
 public class IOUtil {
@@ -21,5 +19,13 @@ public class IOUtil {
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(Files.newOutputStream(file.toPath()));
         objectOutputStream.writeObject(object);
         objectOutputStream.close();
+    }
+
+    public static void writeLines(File file, List<String> lines) throws IOException {
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
+        for (String line : lines) {
+            bufferedWriter.write(line);
+        }
+        bufferedWriter.close();
     }
 }

@@ -17,7 +17,9 @@ public class InputSplitUtils {
      * @return 文本中的案例处罚部分
      */
     public static ArrayList<String> dealAndStorePenaltyCaseContent(String line) {
-        return new ArrayList<>(Arrays.asList(line.split("[:\\s]")));
+        ArrayList<String> penaltyCaseContents = new ArrayList<>(Arrays.asList(line.split("[:\\s]")));
+        return integrateContents(penaltyCaseContents);
+//        return new ArrayList<>(Arrays.asList(line.split("[:\\s]")));
     }
 
     /**
@@ -51,7 +53,10 @@ public class InputSplitUtils {
 
         Pattern pattern = Pattern.compile("附：.*");
         Matcher matcher = pattern.matcher(line);
-        return new ArrayList<>(Arrays.asList(matcher.replaceAll("").split("[:\\s]")));
+
+        ArrayList<String> interpretationContents = new ArrayList<>(Arrays.asList(matcher.replaceAll("").split("[:\\s]")));
+        return integrateContents(interpretationContents);
+//        return new ArrayList<>(Arrays.asList(matcher.replaceAll("").split("[:\\s]")));
     }
 
     /**
@@ -81,6 +86,20 @@ public class InputSplitUtils {
      */
     public static void writeInterpretationContentsToDatabase(ArrayList<ArrayList<String>> interpretationInfo, ArrayList<ArrayList<String>> interpretationContents) {
         System.out.println("Interpretation of laws has stored.");
+    }
+
+    private static ArrayList<String> integrateContents(ArrayList<String> contents) {
+        ArrayList<String> integratedContents = new ArrayList<>(contents);
+//        StringBuilder sb = new StringBuilder();
+//        for (String content : contents) {
+//            if (sb.length() < 50) {
+//                sb.append(content);
+//            } else {
+//                integratedContents.add(sb.toString());
+//                sb = new StringBuilder(content);
+//            }
+//        }
+        return integratedContents;
     }
 
 

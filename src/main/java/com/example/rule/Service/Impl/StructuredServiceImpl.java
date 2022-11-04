@@ -128,9 +128,7 @@ public class StructuredServiceImpl implements StructuredService {
                 findAndStoreArticleTitleFromText(title, relatedLaws);
 
                 ArrayList<String> penaltyCaseContent = penaltyCaseContents.get(i);
-                // TODO 为什么j=1？j=0时case里是啥
-                for (int j = 1; j < penaltyCaseContent.size(); j++) {
-                    String context = penaltyCaseContent.get(j);
+                for (String context : penaltyCaseContent) {
                     findAndStoreArticleTitleFromText(context, relatedLaws);
                     penaltyCaseStructureResPOS.add(new PenaltyCaseStructureResPO()
                             .setTitle(title)
@@ -204,6 +202,7 @@ public class StructuredServiceImpl implements StructuredService {
                 }
                 topLawsOfInterpretationPOS.add(topLawsOfInterpretationPO.setLaws(relatedLaws));
             }
+
             topLawsOfInterpretationRepository.saveAll(topLawsOfInterpretationPOS);
             interpretationStructureRepository.saveAll(interpretationStructureResPOS);
 
@@ -213,6 +212,7 @@ public class StructuredServiceImpl implements StructuredService {
 
         return true;
     }
+
 
     /**
      * 查找文本中的文章名并存储
