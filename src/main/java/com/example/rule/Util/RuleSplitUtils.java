@@ -20,7 +20,7 @@ public class RuleSplitUtils {
         int currLine;
 //        boolean isItem = false;
         Integer type = 0;
-        for (currLine = 0; currLine < texts.size()-1; currLine++) {
+        for (currLine = 0; currLine < texts.size() - 1; currLine++) {
             String tmpLine = texts.get(currLine).replaceAll("　", " ");
             tmpLine = tmpLine.replaceAll(" ", "");
             tmpLine = tmpLine.replaceAll("\\s", "");
@@ -42,6 +42,10 @@ public class RuleSplitUtils {
             tmpLine = tmpLine.replaceAll("\\s", "");
             String mark = "第" + arabicNumToChineseNum(index) + "条";
             if (tmpLine.startsWith("第" + arabicNumToChineseNum(chapter) + "章")) {
+                if (tmpLine.endsWith("附则")) {
+                    System.out.println("delete 附则");
+                    break;
+                }
                 res.add(Pair.of(resLine.toString(), type));
                 resLine = new StringBuilder(line);
                 chapter++;

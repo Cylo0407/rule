@@ -31,7 +31,7 @@ public class TextRankKeyWord {
     }
 
     public static int countWord(String content) {
-        List<Term> termList = HanLP.segment(content);
+        List<Term> termList = HanLP.segment(content.replace("\n", "，"));
         List<String> wordList = new ArrayList<String>();
         for (Term t : termList) {
             if (shouldInclude(t)) {

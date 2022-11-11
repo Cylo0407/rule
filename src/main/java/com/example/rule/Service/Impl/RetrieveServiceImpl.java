@@ -191,83 +191,18 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         List<TopLawsMatchResVO> resVOS = new ArrayList<>();
 
-        //tfidfOfRules: <ruleId,<keyward,tfidf>>
-        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
-        //frequencyOfRules: <ruleId,<keyward,frequency>>
-        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
-
-
-        //遍历每整个处罚案例中的每个上位法，去找内规库中有相同上位法的内规
-        for (TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO : topLawsOfPenaltyCasePOList) { //对每一整个处罚案例
+        //遍历每整个处罚案例中的每个相关法，去找内规库中有相同相关法的内规
+        for (TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO : topLawsOfPenaltyCasePOList) {
             Set<TopLawsOfRulePO> ruleOfSameTopLaws =
                     getRuleOfSameTopLaws(topLawsOfPenaltyCasePO, topLawsOfRulePOList); //如果用相同上位法就add进来
 
-            List<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
-            for (TopLawsOfRulePO topLawsOfRulePO : ruleOfSameTopLaws) {
-                ruleStructureResPOS.addAll(ruleStructureRepository.findByTitle(topLawsOfRulePO.getTitle()));
-            }
-            List<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS =
-                    penaltyCaseStructureRepository.findByDocId(topLawsOfPenaltyCasePO.getDocId());
+            TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
+            matchResVO.setInput_title(topLawsOfPenaltyCasePO.getTitle());
+            matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws());
+            matchResVO.setRuleMatchRes(ruleOfSameTopLaws);
 
-
-            //开始计算相似度的步骤
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 获取一条内规的词频
-                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
-                //存储内规词频
-                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
-            }
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 计算一条内规的TF-IDF
-                Map<String, Double> tfidfOfRule =
-                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
-                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
-            }
-
-
-            for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
-                TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
-                // 1. 分词
-                Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", penaltyCaseStructureResPO.getText());
-                // 2. 计算每个词的TF-IDF值
-                Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, frequencyOfRules);
-                // sims：<ruleId，similarity>
-                List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
-
-                for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
-                    Map<String, Double> weight = entry.getValue();
-                    Set<String> keywords = new HashSet<>();
-                    // 计算向量模
-                    double a = 0.0;
-                    for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
-                        keywords.add(me.getKey());
-                        a += me.getValue() * me.getValue();
-                    }
-                    a = Math.sqrt(a);
-                    double b = 0.0;
-                    for (Map.Entry<String, Double> me : weight.entrySet()) {
-                        keywords.add(me.getKey());
-                        b += me.getValue() * me.getValue();
-                    }
-                    b = Math.sqrt(b);
-
-                    // 计算向量点积
-                    double ab = 0.0;
-                    for (String word : keywords) {
-                        ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
-                    }
-                    double cos = ab / (a * b);
-                    similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
-                }
-                matchResVO.setInput_title(penaltyCaseStructureResPO.getTitle());
-                matchResVO.setInput_text(penaltyCaseStructureResPO.getText());
-                matchResVO.setTopLaws(topLawsOfPenaltyCasePO.getLaws()); //增加了一个外部输入的 toplaws 字段
-                matchResVO.setRuleMatchRes(getListBySim2(similarityBetweenInputAndRules));
-
-                resVOS.add(matchResVO);
-            }
+            resVOS.add(matchResVO);
         }
-
         return resVOS;
     }
 
@@ -311,83 +246,18 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         List<TopLawsMatchResVO> resVOS = new ArrayList<>();
 
-        //tfidfOfRules: <ruleId,<keyward,tfidf>>
-        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
-        //frequencyOfRules: <ruleId,<keyward,frequency>>
-        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
-
-
-        //遍历每整个处罚案例中的每个上位法，去找内规库中有相同上位法的内规
-        for (TopLawsOfInterpretationPO topLawsOfInterpretationPO : topLawsOfInterpretationPOList) { //对每一整个处罚案例
+        //遍历每整个处罚案例中的每个相关法，去找内规库中有相同相关法的内规
+        for (TopLawsOfInterpretationPO topLawsOfInterpretationPO : topLawsOfInterpretationPOList) {
             Set<TopLawsOfRulePO> ruleOfSameTopLaws =
                     getRuleOfSameTopLaws(topLawsOfInterpretationPO, topLawsOfRulePOList); //如果用相同上位法就add进来
 
-            List<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
-            for (TopLawsOfRulePO topLawsOfRulePO : ruleOfSameTopLaws) {
-                ruleStructureResPOS.addAll(ruleStructureRepository.findByTitle(topLawsOfRulePO.getTitle()));
-            }
-            List<InterpretationStructureResPO> interpretationStructureResPOS =
-                    interpretationStructureRepository.findByDocId(topLawsOfInterpretationPO.getDocId());
+            TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
+            matchResVO.setInput_title(topLawsOfInterpretationPO.getTitle());
+            matchResVO.setTopLaws(topLawsOfInterpretationPO.getLaws());
+            matchResVO.setRuleMatchRes(ruleOfSameTopLaws);
 
-
-            //开始计算相似度的步骤
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 获取一条内规的词频
-                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
-                //存储内规词频
-                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
-            }
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 计算一条内规的TF-IDF
-                Map<String, Double> tfidfOfRule =
-                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
-                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
-            }
-
-
-            for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
-                TopLawsMatchResVO matchResVO = new TopLawsMatchResVO();
-                // 1. 分词
-                Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
-                // 2. 计算每个词的TF-IDF值
-                Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, frequencyOfRules);
-                // sims：<ruleId，similarity>
-                List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
-
-                for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
-                    Map<String, Double> weight = entry.getValue();
-                    Set<String> keywords = new HashSet<>();
-                    // 计算向量模
-                    double a = 0.0;
-                    for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
-                        keywords.add(me.getKey());
-                        a += me.getValue() * me.getValue();
-                    }
-                    a = Math.sqrt(a);
-                    double b = 0.0;
-                    for (Map.Entry<String, Double> me : weight.entrySet()) {
-                        keywords.add(me.getKey());
-                        b += me.getValue() * me.getValue();
-                    }
-                    b = Math.sqrt(b);
-
-                    // 计算向量点积
-                    double ab = 0.0;
-                    for (String word : keywords) {
-                        ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
-                    }
-                    double cos = ab / (a * b);
-                    similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
-                }
-                matchResVO.setInput_title(interpretationStructureResPO.getTitle());
-                matchResVO.setInput_text(interpretationStructureResPO.getText());
-                matchResVO.setTopLaws(topLawsOfInterpretationPO.getLaws()); //增加了一个外部输入的 toplaws 字段
-                matchResVO.setRuleMatchRes(getListBySim2(similarityBetweenInputAndRules));
-
-                resVOS.add(matchResVO);
-            }
+            resVOS.add(matchResVO);
         }
-
         return resVOS;
     }
 
