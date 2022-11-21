@@ -105,7 +105,7 @@ public class TextRankKeyWord {
             tf.put(key, (double) frequency.get(key) / termsNum);
         }
 
-        // 计算IDF：先计算DF，即一个词在所有文章中出现的次数（每有一篇文章/一段语料中出现记为1），再取倒数
+        // 计算IDF：先计算DF，即一个词在所有文章中出现的次数（每有一篇文章/一段语料中出现记为1，再取倒数
         Map<String, Double> weight = new HashMap<>();
         for (String key : frequency.keySet()) {
             int cnt = 0;
@@ -113,17 +113,12 @@ public class TextRankKeyWord {
             for (Map.Entry<RuleStructureResPO, Map<String, Integer>> me : frequencyOfRules.entrySet()) {
                 RuleStructureResPO ruleStructureResPO = me.getKey();
                 Map<String, Integer> map = me.getValue();
-//                Map<String, Integer> map = TextRankKeyWord.getWordList(ruleStructureResPOS.get(i).getTitle(), ruleStructureResPOS.get(i).getText());
-//                Map<String, Integer> map = TextRankKeyWord.getWordList(ruleStructureResPOS.get(i).getText(), ruleStructureResPOS.get(i).getText());
                 if (map.containsKey(key)) cnt++;
             }
-//            double idf = Math.log((double) ruleStructureResPOS.size() / (cnt + 1));
 
-            // cnt为0则idf视为0
             double idf = 0.0;
             if (cnt > 0) {
-                idf = (double) frequencyOfRules.size() / cnt;
-//                System.out.println("idf:" + idf);
+                idf = Math.log((double) frequencyOfRules.size() / cnt);
             }
             weight.put(key, tf.get(key) * idf);
         }

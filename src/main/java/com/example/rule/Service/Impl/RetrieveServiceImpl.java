@@ -7,6 +7,7 @@ import com.example.rule.Model.VO.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TextRankKeyWord;
+import com.example.rule.Util.BM25;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
@@ -42,11 +43,9 @@ public class RetrieveServiceImpl implements RetrieveService {
      * @return resVO: 每一条解释与内规之间的相似度
      */
     @Override
-    public List<MatchResVO> retrieve() {
+    public List<MatchResVO> retrieveByTFIDF() {
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
-        List<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS = penaltyCaseStructureRepository.findAll();
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
-        interpretationStructureResPOS = interpretationStructureResPOS.subList(0, 3);
 
         List<MatchResVO> resVOS = new ArrayList<>();
 
@@ -106,7 +105,6 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         //针对外部输入进行检索:
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
-//        for (PenaltyCaseStructureResPO penaltyCaseStructureResPO : penaltyCaseStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 分词
             Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
@@ -172,10 +170,121 @@ public class RetrieveServiceImpl implements RetrieveService {
                 res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), Pair.of(ruleStructureResPO.getTitle(), ruleStructureResPO.getText())));
                 count++;
                 // 限制输出15条相关内容
-                if (count >= 20) return res;
+                if (count >= 15) return res;
             }
         }
         return res;
+    }
+
+
+    /**
+     * 通过BM25算法计算政策解读与内规之间的相似度
+     * TODO : BM25算法主要有三部分
+     * 1、单词Wi的权重，即idf；
+     * 2、单词与文档之间的相关性；
+     * 3、单词与Query之间的相关性；
+     */
+    @Override
+    public List<MatchResVO> retrieveByBM25() {
+        List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
+        List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
+
+        List<MatchResVO> resVOS = new ArrayList<>();
+
+        //frequencyOfRules: <ruleId,<keyward,frequency>>
+        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
+        //tfidfOfRules: <ruleId,<keyward,tfidf>>
+        Map<RuleStructureResPO, Map<String, Double>> BM25_tfidfOfRules = new HashMap<>();
+
+        // TODO 把这一步计算出的结果保存下来，以免重复计算：需要保存词频表和tf-idf表
+        File rulesWordsFrequency = new File("src/main/resources/rules_info/rules_word_frequency.txt");
+        if (rulesWordsFrequency.exists()) {
+            try {
+                frequencyOfRules = (Map<RuleStructureResPO, Map<String, Integer>>) IOUtil.readObject(rulesWordsFrequency);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            // 对内规库里检索到的每条内规执行如下：
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 获取一条内规的词频
+                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                //存储内规词频
+                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+            }
+            try {
+                rulesWordsFrequency.createNewFile();
+                IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        File rulesWordsTFIDF = new File("src/main/resources/rules_info/rules_word_tfidf.txt");
+        if (rulesWordsTFIDF.exists()) {
+            try {
+                BM25_tfidfOfRules = (Map<RuleStructureResPO, Map<String, Double>>) IOUtil.readObject(rulesWordsTFIDF);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 计算一条内规的TF-IDF
+                Map<String, Double> BM_tfidfOfRule =
+                        BM25.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                BM25_tfidfOfRules.put(ruleStructureResPO, BM_tfidfOfRule);
+            }
+            try {
+                rulesWordsTFIDF.createNewFile();
+                IOUtil.writeObject(rulesWordsTFIDF, BM25_tfidfOfRules);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        //针对每一个政策解读条例:
+        for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
+            MatchResVO matchResVO = new MatchResVO();
+            // 1. 分词
+            Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
+            // 2. 计算每个词的TF-IDF值
+            Map<String, Double> BM25_tfidfOfInput = BM25.getKeyWords(inputFrequency, frequencyOfRules);
+            // sims：<ruleId，similarity>
+            List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
+
+            for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : BM25_tfidfOfRules.entrySet()) {
+                Map<String, Double> weight = entry.getValue();
+                Set<String> keywords = new HashSet<>();
+                // 计算向量模
+                double a = 0.0;
+                for (Map.Entry<String, Double> me : BM25_tfidfOfInput.entrySet()) {
+                    keywords.add(me.getKey());
+                    a += me.getValue() * me.getValue();
+                }
+                a = Math.sqrt(a);
+                double b = 0.0;
+                for (Map.Entry<String, Double> me : weight.entrySet()) {
+                    keywords.add(me.getKey());
+                    b += me.getValue() * me.getValue();
+                }
+                b = Math.sqrt(b);
+
+                // 计算向量点积
+                double ab = 0.0;
+                for (String word : keywords) {
+                    ab += BM25_tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+                }
+                double cos = ab / (a * b);
+                similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
+            }
+            matchResVO.setInput_title(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_text(interpretationStructureResPO.getText());
+            matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
+
+            resVOS.add(matchResVO);
+        }
+
+        return resVOS;
     }
 
 

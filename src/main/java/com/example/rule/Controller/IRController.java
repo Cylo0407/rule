@@ -19,9 +19,14 @@ public class IRController {
     @Resource
     RetrieveService retrieveService;
 
-    @PostMapping("/retrieval")
-    public List<MatchResVO> retrieveRules() {
-        return retrieveService.retrieve();
+    @PostMapping("/tfidf")
+    public List<MatchResVO> retrieveRulesByTFIDF() {
+        return retrieveService.retrieveByTFIDF();
+    }
+
+    @PostMapping("/BM25")
+    public List<MatchResVO> retrieveRulesByBM25() {
+        return retrieveService.retrieveByBM25();
     }
 
     @PostMapping("/penaltyCaseTopLaws")
