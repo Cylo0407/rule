@@ -1,6 +1,7 @@
 package com.example.rule.Service.Impl;
 
 import com.example.rule.Dao.*;
+import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.PO.*;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Model.VO.TopLawsMatchResVO;
@@ -54,7 +55,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         //frequencyOfRules: <ruleId,<keyward,frequency>>
         Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
 
-        // TODO 把这一步计算出的结果保存下来，以免重复计算：需要保存词频表和tf-idf表
+        // 保存词频表和tf-idf表
         System.out.println("start rule");
         File rulesWordsFrequency = new File("src/main/resources/rules_info/rules_word_frequency.txt");
         if (rulesWordsFrequency.exists()) {
@@ -139,7 +140,7 @@ public class RetrieveServiceImpl implements RetrieveService {
                 double cos = ab / (a * b);
                 similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
             }
-            matchResVO.setInput_title(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
@@ -150,27 +151,15 @@ public class RetrieveServiceImpl implements RetrieveService {
     }
 
 
-    private List<Triple<Double, Integer, Pair<String, String>>> getListBySim(List<Pair<RuleStructureResPO, Double>> sims) {
-        Collections.sort(sims, new Comparator<Pair<RuleStructureResPO, Double>>() {
-            @Override
-            public int compare(Pair<RuleStructureResPO, Double> o1, Pair<RuleStructureResPO, Double> o2) {
-                if (o1.getRight() > o2.getRight()) return -1;
-                else if (o1.getRight() < o2.getRight()) return 1;
-                else return 0;
-            }
-        });
+    private List<MatchesBody> getListBySim(List<Pair<RuleStructureResPO, Double>> sims) {
+        sims.sort((o1, o2) -> o2.getRight().compareTo(o1.getRight()));
 
-        List<Triple<Double, Integer, Pair<String, String>>> res = new ArrayList<>();
-        int count = 0;
+        List<MatchesBody> res = new ArrayList<>();
         for (Pair<RuleStructureResPO, Double> pair : sims) {
             if (pair.getRight() > 0) {
                 RuleStructureResPO ruleStructureResPO = pair.getLeft();
-                System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
                 // triple：<similarity,ruleId,ruleContent>
-                res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), Pair.of(ruleStructureResPO.getTitle(), ruleStructureResPO.getText())));
-                count++;
-                // 限制输出15条相关内容
-                if (count >= 15) return res;
+                res.add(new MatchesBody(pair.getRight(), ruleStructureResPO.getTitle(), ruleStructureResPO.getText(), 0));
             }
         }
         return res;
@@ -277,7 +266,7 @@ public class RetrieveServiceImpl implements RetrieveService {
                 double cos = ab / (a * b);
                 similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
             }
-            matchResVO.setInput_title(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(getListBySim(similarityBetweenInputAndRules));
 
@@ -312,6 +301,7 @@ public class RetrieveServiceImpl implements RetrieveService {
 
             resVOS.add(matchResVO);
         }
+
         return resVOS;
     }
 
