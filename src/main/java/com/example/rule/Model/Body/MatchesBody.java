@@ -4,9 +4,9 @@ public class MatchesBody {
     private Double similarity;
     private String rule_fileName;
     private String rule_text;
-    private int relevance;
+    private Integer relevance;
 
-    public MatchesBody(Double similarity, String rule_fileName, String rule_text, int relevance) {
+    public MatchesBody(Double similarity, String rule_fileName, String rule_text, Integer relevance) {
         this.similarity = similarity;
         this.rule_fileName = rule_fileName;
         this.rule_text = rule_text;
@@ -37,11 +37,11 @@ public class MatchesBody {
         this.rule_text = rule_text;
     }
 
-    public int getRelevance() {
+    public Integer getRelevance() {
         return relevance;
     }
 
-    public void setRelevance(int relevance) {
+    public void setRelevance(Integer relevance) {
         this.relevance = relevance;
     }
 }

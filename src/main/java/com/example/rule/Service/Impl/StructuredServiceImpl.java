@@ -1,12 +1,16 @@
 package com.example.rule.Service.Impl;
 
 import com.example.rule.Dao.*;
+import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.PO.*;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfInterpretationPO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfPenaltyCasePO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Service.StructuredService;
-import com.example.rule.Util.InputSplitUtils;
-import com.example.rule.Util.RuleSplitUtils;
+import com.example.rule.Util.FilePreprocessUtil;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tomcat.util.digester.Rule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +47,7 @@ public class StructuredServiceImpl implements StructuredService {
     @Override
     public boolean structureRules(List<String> texts, String title) {
         // 拿取所有切分后的内规文本
-        List<Pair<String, Integer>> splitRulesInfo = RuleSplitUtils.split(texts);
+        List<Pair<String, Integer>> splitRulesInfo = FilePreprocessUtil.split(texts);
 
         ArrayList<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
 
@@ -112,7 +116,7 @@ public class StructuredServiceImpl implements StructuredService {
                 ArrayList<String> caseLine = new ArrayList<>(Arrays.asList(line.split(",")));
                 caseLine.replaceAll(s -> s.replace("\"", ""));
                 penaltyCaseInfos.add(new ArrayList<>(caseLine.subList(0, 3)));
-                penaltyCaseContents.add(InputSplitUtils.dealAndStorePenaltyCaseContent(caseLine.get(3)));
+                penaltyCaseContents.add(FilePreprocessUtil.dealAndStorePenaltyCaseContent(caseLine.get(3)));
             }
 
             ArrayList<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOS = new ArrayList<>();
@@ -172,7 +176,7 @@ public class StructuredServiceImpl implements StructuredService {
                     } else if (line.startsWith("docId:")) {
                         interpretationOfLawsInfo.add(line.replace("docId:", ""));
                     } else if (line.startsWith("text:")) {
-                        interpretationOfLawsContents.add(InputSplitUtils.dealAndStoreInterpretationOfLawsContent(line));
+                        interpretationOfLawsContents.add(FilePreprocessUtil.dealAndStoreInterpretationOfLawsContent(line));
                     }
                     line = linesReader.readLine();
                 }

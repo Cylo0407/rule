@@ -1,4 +1,4 @@
-package com.example.rule.Util;
+package com.example.rule.Model.Algorithm;
 
 import com.example.rule.Model.PO.RuleStructureResPO;
 

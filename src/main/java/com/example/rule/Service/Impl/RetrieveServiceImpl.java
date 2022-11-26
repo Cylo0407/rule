@@ -1,14 +1,20 @@
 package com.example.rule.Service.Impl;
 
 import com.example.rule.Dao.*;
+import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.PO.*;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfInterpretationPO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfPenaltyCasePO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Model.VO.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import com.example.rule.Util.IOUtil;
-import com.example.rule.Util.TextRankKeyWord;
-import com.example.rule.Util.BM25;
+import com.example.rule.Util.TermProcessingUtil;
+import com.example.rule.Model.Algorithm.BM25;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
@@ -68,7 +74,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             // 对内规库里检索到的每条内规执行如下：
             for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
                 // 获取一条内规的词频
-                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                Map<String, Integer> ruleFrequency = TermProcessingUtil.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
                 //存储内规词频
                 frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
             }
@@ -91,7 +97,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
                 // 计算一条内规的TF-IDF
                 Map<String, Double> tfidfOfRule =
-                        TextRankKeyWord.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                        TermProcessingUtil.getKeyWords(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
                 tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
             }
             try {
@@ -108,9 +114,9 @@ public class RetrieveServiceImpl implements RetrieveService {
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 分词
-            Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
+            Map<String, Integer> inputFrequency = TermProcessingUtil.getWordList("", interpretationStructureResPO.getText());
             // 2. 计算每个词的TF-IDF值
-            Map<String, Double> tfidfOfInput = TextRankKeyWord.getKeyWords(inputFrequency, frequencyOfRules);
+            Map<String, Double> tfidfOfInput = TermProcessingUtil.getKeyWords(inputFrequency, frequencyOfRules);
             // sims：<ruleId，similarity>
             List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
 
@@ -159,6 +165,9 @@ public class RetrieveServiceImpl implements RetrieveService {
             if (pair.getRight() > 0) {
                 RuleStructureResPO ruleStructureResPO = pair.getLeft();
                 // triple：<similarity,ruleId,ruleContent>
+                if (pair.getRight() < 0.01) {
+                    break;
+                }
                 res.add(new MatchesBody(pair.getRight(), ruleStructureResPO.getTitle(), ruleStructureResPO.getText(), 0));
             }
         }
@@ -197,7 +206,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             // 对内规库里检索到的每条内规执行如下：
             for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
                 // 获取一条内规的词频
-                Map<String, Integer> ruleFrequency = TextRankKeyWord.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
+                Map<String, Integer> ruleFrequency = TermProcessingUtil.getWordList(ruleStructureResPO.getTitle(), ruleStructureResPO.getText());
                 //存储内规词频
                 frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
             }
@@ -235,7 +244,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 分词
-            Map<String, Integer> inputFrequency = TextRankKeyWord.getWordList("", interpretationStructureResPO.getText());
+            Map<String, Integer> inputFrequency = TermProcessingUtil.getWordList("", interpretationStructureResPO.getText());
             // 2. 计算每个词的TF-IDF值
             Map<String, Double> BM25_tfidfOfInput = BM25.getKeyWords(inputFrequency, frequencyOfRules);
             // sims：<ruleId，similarity>

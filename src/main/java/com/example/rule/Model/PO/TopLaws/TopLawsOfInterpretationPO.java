@@ -1,4 +1,4 @@
-package com.example.rule.Model.PO;
+package com.example.rule.Model.PO.TopLaws;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -12,28 +12,28 @@ import javax.persistence.*;
 @Accessors(chain = true)
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "penalty_case_top_laws")
-public class TopLawsOfPenaltyCasePO {
+@Table(name = "interpretation_top_laws")
+public class TopLawsOfInterpretationPO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id; //处罚案例库上位法集合主键
+    private Integer id;
 
     @Column(name = "title")
-    private String title; //处罚案例库标题
+    private String title;
 
     @Column(name = "doc_id")
-    private String docId; //处罚案例库标题
+    private String docId;
 
     @Column(name = "laws")
-    private String laws; //处罚案例库标题
+    private String laws;
 
-    public TopLawsOfPenaltyCasePO setLaws(String laws) {
+    public TopLawsOfInterpretationPO setLaws(String laws) {
         this.laws = laws;
         return this;
     }
 
-    public TopLawsOfPenaltyCasePO setLaws(Iterable<String> laws) {
+    public TopLawsOfInterpretationPO setLaws(Iterable<String> laws) {
         this.laws = String.join("|", laws);
         return this;
     }

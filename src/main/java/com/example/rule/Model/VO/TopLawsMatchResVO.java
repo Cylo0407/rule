@@ -1,10 +1,8 @@
 package com.example.rule.Model.VO;
 
-import com.example.rule.Model.PO.TopLawsOfRulePO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.List;
 import java.util.Set;
 
 @Data

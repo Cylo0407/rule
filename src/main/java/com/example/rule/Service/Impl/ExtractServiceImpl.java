@@ -1,11 +1,11 @@
 package com.example.rule.Service.Impl;
 
-import com.example.rule.Dao.TopLawsOfInterpretationRepository;
-import com.example.rule.Dao.TopLawsOfPenaltyCaseRepository;
-import com.example.rule.Dao.TopLawsOfRuleRepository;
-import com.example.rule.Model.PO.TopLawsOfInterpretationPO;
-import com.example.rule.Model.PO.TopLawsOfPenaltyCasePO;
-import com.example.rule.Model.PO.TopLawsOfRulePO;
+import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
+import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfInterpretationPO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfPenaltyCasePO;
+import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Service.ExtractService;
 import com.example.rule.Util.IOUtil;
 import org.springframework.stereotype.Service;

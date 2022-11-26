@@ -4,7 +4,6 @@ import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.common.Term;
-import org.apache.tomcat.util.digester.Rule;
 
 import java.util.*;
 
@@ -13,7 +12,7 @@ import java.util.*;
  *
  * @author hankcs
  */
-public class TextRankKeyWord {
+public class TermProcessingUtil {
     public static final int nKeyword = 10;
     /**
      * 阻尼系数（ＤａｍｐｉｎｇＦａｃｔｏｒ），一般取值为0.85
@@ -25,7 +24,7 @@ public class TextRankKeyWord {
     static final int max_iter = 200;
     static final float min_diff = 0.001f;
 
-    public TextRankKeyWord() {
+    public TermProcessingUtil() {
         // jdk bug : Exception in thread "main" java.lang.IllegalArgumentException: Comparison method violates its general contract!
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
     }
@@ -138,7 +137,7 @@ public class TextRankKeyWord {
     public static void main(String[] args) {
 //        String content = "程序员(英文Programmer)是从事程序开发、维护的专业人员。一般将程序员分为程序设计人员和程序编码人员，但两者的界限并不非常清楚，特别是在中国。软件从业人员分为初级程序员、高级程序员、系统分析员和项目经理四大类。";
         String content = "根据整体发展战略，确定风险偏好，制定风险管理政策。风险管理政策应与本行的发展规划、资本实力、经营目标和风险管理能力相适应，并符合法律法规和监管要求。";
-        System.out.println(TextRankKeyWord.getWordList("", content));
+        System.out.println(TermProcessingUtil.getWordList("", content));
 
     }
 }
