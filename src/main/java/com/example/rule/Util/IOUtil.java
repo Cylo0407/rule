@@ -1,5 +1,6 @@
 package com.example.rule.Util;
 
+import com.example.rule.Model.Config.PathConfig;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
@@ -33,6 +34,7 @@ public class IOUtil {
             lines.add(line);
             line = bufferedReader.readLine();
         }
+        bufferedReader.close();
         return lines;
     }
 
@@ -45,41 +47,32 @@ public class IOUtil {
     }
 
     public static List<String> readWord(File file) {
-        String fileName = file.getName();
+        String fileSufName = PathConfig.getFileSufName(file.getName());
         String filePath = file.getPath();
         List<String> linList = new ArrayList<String>();
         String buffer = "";
         try {
-            if (fileName.endsWith(".doc")) {
-                InputStream is = new FileInputStream(file);
-                WordExtractor ex = new WordExtractor(is);
-                buffer = ex.getText();
-                ex.close();
-
-                if (buffer.length() > 0) {
-                    //使用回车换行符分割字符串
-                    String[] arry = buffer.split("\\r?\\n");
-                    for (String string : arry) {
-                        if (!string.equals(""))
-                            linList.add(string.trim());
-                    }
-                }
-            } else if (fileName.endsWith(".docx")) {
+            if (fileSufName.equals(".doc")) {
+                WordExtractor extractor = new WordExtractor(Files.newInputStream(file.toPath()));
+                buffer = extractor.getText();
+                extractor.close();
+            } else if (fileSufName.equals(".docx")) {
                 OPCPackage opcPackage = POIXMLDocument.openPackage(filePath);
                 POIXMLTextExtractor extractor = new XWPFWordExtractor(opcPackage);
                 buffer = extractor.getText();
                 extractor.close();
-
-                if (buffer.length() > 0) {
-                    //使用换行符分割字符串
-                    String[] arry = buffer.split("\\r?\\n");
-                    for (String string : arry) {
-                        if (!string.equals(""))
-                            linList.add(string.trim());
-                    }
-                }
             } else {
                 return null;
+            }
+
+            if (buffer.length() > 0) {
+                //使用回车换行符分割字符串
+                String[] contexts = buffer.split("\\r?\\n");
+                for (String string : contexts) {
+                    if (!string.equals("")) {
+                        linList.add(string.trim());
+                    }
+                }
             }
 
             return linList;
@@ -88,5 +81,23 @@ public class IOUtil {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /**
+     * 返回目标文件，如果该文件不存在则创建该文件
+     *
+     * @param filePath 目标文件路径
+     * @return 目标文件
+     */
+    public static File getTargetFile(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return file;
     }
 }

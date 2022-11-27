@@ -1,61 +1,46 @@
 package com.example.rule.Util;
 
+import com.example.rule.Model.Config.PathConfig;
+import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.common.Term;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 /**
- * TextRank关键词提取
- *
- * @author hankcs
+ * 词处理工具
  */
 public class TermProcessingUtil {
-    public static final int nKeyword = 10;
     /**
-     * 阻尼系数（ＤａｍｐｉｎｇＦａｃｔｏｒ），一般取值为0.85
+     * 计算词频
+     *
+     * @param content 文本
+     * @return 词频列表
      */
-    static final float d = 0.85f;
-    /**
-     * 最大迭代次数
-     */
-    static final int max_iter = 200;
-    static final float min_diff = 0.001f;
-
-    public TermProcessingUtil() {
-        // jdk bug : Exception in thread "main" java.lang.IllegalArgumentException: Comparison method violates its general contract!
-        System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
-    }
-
-    public static int countWord(String content) {
+    public static List<String> countTermFreq(String content) {
         List<Term> termList = HanLP.segment(content.replace("\n", "，"));
-        List<String> wordList = new ArrayList<String>();
+        List<String> wordList = new ArrayList<>();
         for (Term t : termList) {
             if (shouldInclude(t)) {
                 wordList.add(t.word);
             }
         }
-        return wordList.size();
+        return wordList;
     }
 
     /**
-     * 计算文本的词频（其实可以把标题和内容合并为一个参数）
+     * 计算文本的词频
      *
-     * @param title   文本标题
      * @param content 文本内容
      * @return 词频映射表
      */
-    public static Map<String, Integer> getWordList(String title, String content) {
-        List<Term> termList = HanLP.segment(title + content);
-        List<String> wordList = new ArrayList<String>();
-        for (Term t : termList) {
-            if (shouldInclude(t)) {
-                wordList.add(t.word);
-            }
-        }
-
+    public static Map<String, Integer> calTermFreq(String content) {
+        List<String> wordList = TermProcessingUtil.countTermFreq(content);
         // 计算每个词的词频
         Map<String, Integer> frequency = new HashMap<>();
         for (String word : wordList) {
@@ -65,32 +50,30 @@ public class TermProcessingUtil {
     }
 
     /**
-     * 是否应当将这个term纳入计算，词性属于名词、动词、副词、形容词
-     * TODO 停用词表后续还可以优化
+     * 是否应当将这个term纳入计算，词性属于名词、动词、词组
      *
-     * @param term
-     * @return 是否应当
+     * @param term Term对象
+     * @return 是否应当纳入
      */
     public static boolean shouldInclude(Term term) {
         return CoreStopWordDictionary.shouldInclude(term);
+//        String termPos = term.nature.toString();
+//        boolean isTermPos = (termPos.startsWith("n") && (!termPos.equals("nr")))
+//                || termPos.equals("v")
+//                || termPos.equals("vn")
+//                || termPos.equals("phr");
+//        boolean isTermLen = term.word.length() > 1;
+//        return !(isTermPos && isTermLen);
     }
 
-
     /**
-     * 计算一条内规的TF-IDF值
+     * 计算TF
      *
-     * @param frequency        用一条内规（内规标题+内规内容）构建出的词频映射表
-     * @param frequencyOfRules 内规库中每个内规的词频集合
-     * @return
+     * @param frequency 词频
+     * @return TF矩阵
      */
-    public static Map<String, Double> getKeyWords(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
-//        计算词频最高的词
-//        int maxFreq = 0;
-//        for (String key : frequency.keySet()) {
-//            if (frequency.get(key) > maxFreq) maxFreq = frequency.get(key);
-//        }
-
-//        计算一条内规的总词数
+    public static Map<String, Double> calTFs(Map<String, Integer> frequency) {
+        // 计算一条内规的总词数
         int termsNum = 0;
         for (String termName : frequency.keySet()) {
             termsNum += frequency.get(termName);
@@ -99,45 +82,124 @@ public class TermProcessingUtil {
         // 计算TF：词频/单篇文章（语料段落）中的所有词数量总和
         Map<String, Double> tf = new HashMap<>();
         for (String key : frequency.keySet()) {
-//            System.out.println("frequency:" + frequency.get(key));
-//            tf.put(key, (double) frequency.get(key) / maxFreq);
             tf.put(key, (double) frequency.get(key) / termsNum);
         }
+        return tf;
+    }
 
+    public static int calDF(String term, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
+        int df = 0;
+        // 对内规库的一条语料计算DF
+        for (Map.Entry<RuleStructureResPO, Map<String, Integer>> me : frequencyOfRules.entrySet()) {
+            Map<String, Integer> map = me.getValue();
+            if (map.containsKey(term)) df++;
+        }
+        return df;
+    }
+
+    public static Map<String, Double> calIDFs(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
         // 计算IDF：先计算DF，即一个词在所有文章中出现的次数（每有一篇文章/一段语料中出现记为1，再取倒数
-        Map<String, Double> weight = new HashMap<>();
-        for (String key : frequency.keySet()) {
-            int cnt = 0;
-            // 对内规库的每一条语料再分词计算DF
-            for (Map.Entry<RuleStructureResPO, Map<String, Integer>> me : frequencyOfRules.entrySet()) {
-                RuleStructureResPO ruleStructureResPO = me.getKey();
-                Map<String, Integer> map = me.getValue();
-                if (map.containsKey(key)) cnt++;
-            }
-
+        Map<String, Double> termsIDF = new HashMap<>();
+        for (String term : frequency.keySet()) {
+            int df = TermProcessingUtil.calDF(term, frequencyOfRules);
             double idf = 0.0;
-            if (cnt > 0) {
-                idf = Math.log((double) frequencyOfRules.size() / cnt);
+            if (df > 0) {
+                idf = Math.log((double) frequencyOfRules.size() / df);
             }
-            weight.put(key, tf.get(key) * idf);
+            termsIDF.put(term, idf);
         }
-
-        return weight;
+        return termsIDF;
     }
 
-    public static double calSum(Map<String, Double> weight) {
-        double sum = 0.0;
-        for (String key : weight.keySet()) {
-            sum += weight.get(key) * weight.get(key);
+    /**
+     * 计算一条内规的TF-IDF值
+     *
+     * @param frequency        用一条内规（内规标题+内规内容）构建出的词频映射表
+     * @param frequencyOfRules 内规库中每个内规的词频集合
+     * @return term-TFIDF映射
+     */
+    public static Map<String, Double> calTFIDF(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
+        Map<String, Double> termsTF = TermProcessingUtil.calTFs(frequency);
+        Map<String, Double> termsIDF = TermProcessingUtil.calIDFs(frequency, frequencyOfRules);
+        Map<String, Double> termsTFIDF = new HashMap<>();
+        for (String term : termsTF.keySet()) {
+            termsTFIDF.put(term, termsTF.get(term) * termsIDF.get(term));
         }
-        return Math.log(sum);
+        return termsTFIDF;
     }
 
+    public static Map<RuleStructureResPO, Map<String, Integer>> generateTermsFreq(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
+        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
+        File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
+        if (rulesWordsFrequency.exists()) {
+            // 如果有缓存则直接读缓存
+            frequencyOfRules = (Map<RuleStructureResPO, Map<String, Integer>>) IOUtil.readObject(rulesWordsFrequency);
+        } else {
+            // 对内规库里检索到的每条内规执行如下：
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 获取一条内规的词频
+                Map<String, Integer> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
+                // 存储内规词频
+                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+            }
+            rulesWordsFrequency.createNewFile();
+            IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
+        }
+        return frequencyOfRules;
+    }
+
+    public static Map<RuleStructureResPO, Map<String, Double>> generateTermsTFIDF(List<RuleStructureResPO> ruleStructureResPOS, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
+        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
+        File rulesWordsTFIDF = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache);
+        if (rulesWordsTFIDF.exists()) {
+            tfidfOfRules = (Map<RuleStructureResPO, Map<String, Double>>) IOUtil.readObject(rulesWordsTFIDF);
+        } else {
+            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+                // 计算一条内规的TF-IDF
+                Map<String, Double> tfidfOfRule = model.calTermsWeight(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
+                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+            }
+            rulesWordsTFIDF.createNewFile();
+            IOUtil.writeObject(rulesWordsTFIDF, tfidfOfRules);
+        }
+        return tfidfOfRules;
+    }
+
+    public static List<Pair<RuleStructureResPO, Double>> calSimilarity(Map<String, Double> tfidfOfInput, Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules) {
+        List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
+
+        for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
+            Map<String, Double> weight = entry.getValue();
+            Set<String> keywords = new HashSet<>();
+            // 计算向量模
+            double a = 0.0;
+            for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
+                keywords.add(me.getKey());
+                a += me.getValue() * me.getValue();
+            }
+            a = Math.sqrt(a);
+            double b = 0.0;
+            for (Map.Entry<String, Double> me : weight.entrySet()) {
+                keywords.add(me.getKey());
+                b += me.getValue() * me.getValue();
+            }
+            b = Math.sqrt(b);
+
+            // 计算向量点积
+            double ab = 0.0;
+            for (String word : keywords) {
+                ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+            }
+            double cos = ab / (a * b);
+            similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
+        }
+        return similarityBetweenInputAndRules;
+    }
 
     public static void main(String[] args) {
 //        String content = "程序员(英文Programmer)是从事程序开发、维护的专业人员。一般将程序员分为程序设计人员和程序编码人员，但两者的界限并不非常清楚，特别是在中国。软件从业人员分为初级程序员、高级程序员、系统分析员和项目经理四大类。";
         String content = "根据整体发展战略，确定风险偏好，制定风险管理政策。风险管理政策应与本行的发展规划、资本实力、经营目标和风险管理能力相适应，并符合法律法规和监管要求。";
-        System.out.println(TermProcessingUtil.getWordList("", content));
+        System.out.println(TermProcessingUtil.calTermFreq(content));
 
     }
 }

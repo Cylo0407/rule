@@ -1,7 +1,7 @@
 package com.example.rule.Service;
 
 import com.example.rule.Model.VO.MatchResVO;
-import com.example.rule.Model.VO.TopLawsMatchResVO;
+import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 
 import java.util.List;
 

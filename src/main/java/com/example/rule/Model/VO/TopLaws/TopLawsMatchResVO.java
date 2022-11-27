@@ -1,4 +1,4 @@
-package com.example.rule.Model.VO;
+package com.example.rule.Model.VO.TopLaws;
 
 import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import lombok.Data;

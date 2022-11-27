@@ -2,7 +2,7 @@ package com.example.rule.Controller;
 
 
 import com.example.rule.Model.VO.MatchResVO;
-import com.example.rule.Model.VO.TopLawsMatchResVO;
+import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

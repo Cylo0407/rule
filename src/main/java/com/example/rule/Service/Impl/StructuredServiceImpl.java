@@ -1,6 +1,8 @@
 package com.example.rule.Service.Impl;
 
-import com.example.rule.Dao.*;
+import com.example.rule.Dao.InterpretationStructureRepository;
+import com.example.rule.Dao.PenaltyCaseStructureRepository;
+import com.example.rule.Dao.RuleStructureRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
@@ -196,9 +198,8 @@ public class StructuredServiceImpl implements StructuredService {
                 findAndStoreArticleTitleFromText(title, relatedLaws);
 
                 ArrayList<String> interpretationOfLawsContent = interpretationOfLawsContents.get(i);
-                for (int j = 0; j < interpretationOfLawsContent.size(); j++) {
-                    String context = interpretationOfLawsContent.get(j);
-                    findAndStoreArticleTitleFromText(context,relatedLaws);
+                for (String context : interpretationOfLawsContent) {
+                    findAndStoreArticleTitleFromText(context, relatedLaws);
                     interpretationStructureResPOS.add(new InterpretationStructureResPO()
                             .setTitle(title)
                             .setDocId(docId)

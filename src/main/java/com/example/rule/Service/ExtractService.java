@@ -7,4 +7,6 @@ public interface ExtractService {
     void extractProprietaryVocabFormDataBase();
 
     void extractProprietaryVocabFormCorpus();
+
+
 }
