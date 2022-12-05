@@ -46,7 +46,7 @@ public class IOUtil {
         bufferedWriter.close();
     }
 
-    public static List<String> readWord(File file) {
+    public static List<String> readWordLines(File file) {
         String fileSufName = PathConfig.getFileSufName(file.getName());
         String filePath = file.getPath();
         List<String> linList = new ArrayList<String>();
@@ -80,6 +80,23 @@ public class IOUtil {
             System.out.print("error---->" + filePath);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    /**
+     * 判断文档类型并读取文件中的文本
+     *
+     * @param file 文件
+     * @return 文本内容列表
+     */
+    public static List<String> getTargetLines(File file) throws IOException {
+        String sufName = PathConfig.getFileSufName(file.getName());
+        if (sufName.equals(".txt")) {
+            return IOUtil.readLines(file);
+        } else if (sufName.equals(".doc") || sufName.equals(".docx")) {
+            return IOUtil.readWordLines(file);
+        } else {
+            return new ArrayList<>();
         }
     }
 

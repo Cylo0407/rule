@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.io.File;
 import java.util.List;
+import java.util.Objects;
 
 
 @RestController
@@ -22,25 +23,26 @@ public class StructuredController {
     public boolean structureRules() {
 //        String filePath = "/Users/cyl/Downloads/标准版内规/信贷管理部--制度";
 //        String filePath = "/Users/cyl/Downloads/标准版内规/运营管理部--制度";
-//        String filePath = "F:\\魔鬼的力量\\_A研究生资料\\面向互联网+助教材料\\标准版内规";
-        String filePath = "F:\\DataSet\\银行内规项目数据集\\匹配内规候选集合";
+        String filePath = "F:\\魔鬼的力量\\_A研究生资料\\面向互联网+助教材料\\标准版内规";
+//        String filePath = "F:\\DataSet\\银行内规项目数据集\\匹配内规候选集合";
         File dir = new File(filePath);
-        File[] fs = dir.listFiles();
-        for (File f : fs) {
-//            System.out.println("dirName: " + f.getName());
-            if (f.getName().equals(".DS_Store")) continue;
+        structure(dir);
+        return true;
+    }
 
-//            File[] rulesPart = f.listFiles();
-//            for (File file : rulesPart) {
-            String fileName = f.getName();
-            if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
-                System.out.println(fileName);
-                List<String> texts = IOUtil.readWord(f);
+    private void structure(File rule) {
+        if (rule.isDirectory()) {
+            File[] fs = rule.listFiles();
+            for (File f : Objects.requireNonNull(fs)) {
+                structure(f);
+            }
+        } else {
+            String fileName = rule.getName();
+            if (rule.isFile() && (fileName.endsWith(".doc") || fileName.endsWith(".docx"))) {
+                List<String> texts = IOUtil.readWordLines(rule);
                 structuredService.structureRules(texts, fileName.substring(0, fileName.lastIndexOf(".")));
             }
-//            }
         }
-        return true;
     }
 
     @PostMapping("/input")

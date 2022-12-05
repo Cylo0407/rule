@@ -7,6 +7,7 @@ import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.Body.MatchesBody;
+import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.IRModel.VSM;
 import com.example.rule.Model.PO.*;
@@ -16,9 +17,8 @@ import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
-import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TermProcessingUtil;
-import com.example.rule.Model.IRModel.BM25;
+import com.example.rule.Model.IRModel.Algorithm.BM25;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,6 @@ public class RetrieveServiceImpl implements RetrieveService {
 
     /**
      * 通过BM25算法计算政策解读与内规之间的相似度
-     * TODO : BM25算法主要有三部分
      * 1、单词Wi的权重，即idf；
      * 2、单词与文档之间的相关性；
      * 3、单词与Query之间的相关性；
@@ -73,52 +72,55 @@ public class RetrieveServiceImpl implements RetrieveService {
     }
 
     private List<MatchResVO> retrieve() {
+        // 读取内规库和输入库
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
 
         List<MatchResVO> resVOS = new ArrayList<>();
 
         //frequencyOfRules: <ruleId,<keyword,frequency>>
-        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = null;
+        Map<Integer, List<TermBody>> frequencyOfRules = null;
         //tfidfOfRules: <ruleId,<keyword,tfidf>>
-        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = null;
+        Map<Integer, List<TermBody>> tfidfOfRules = null;
         try {
+            // 获取or生成内规的tfidf映射
             frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS);
-            tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(ruleStructureResPOS, frequencyOfRules, this.model);
+            tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules, this.model);
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
-            // 1. 分词
-            Map<String, Integer> inputFrequency = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
-            // 2. 计算每个词的TF-IDF值
-            Map<String, Double> tfidfOfInput = this.model.calTermsWeight(inputFrequency, frequencyOfRules);
+            // 1. 对输入进行分词
+            List<TermBody> inputTermBodies = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
+            // 2. 计算输入中每个词的TF-IDF值
+            this.model.calTermsWeight(inputTermBodies, tfidfOfRules);
             // sims：<ruleId，similarity>
-            List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(tfidfOfInput, tfidfOfRules);
+            Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
+            List<MatchesBody> matchesBodyList = similarityToResult(similarityBetweenInputAndRules,ruleStructureResPOS);
+            sortResultBySimilarity(matchesBodyList);
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
-            matchResVO.setRuleMatchRes(sortResultBySimilarity(similarityBetweenInputAndRules));
+            matchResVO.setRuleMatchRes(matchesBodyList);
             resVOS.add(matchResVO);
         }
         return resVOS;
     }
 
-    private List<MatchesBody> sortResultBySimilarity(List<Pair<RuleStructureResPO, Double>> sims) {
-        sims.sort((o1, o2) -> o2.getRight().compareTo(o1.getRight()));
-
+    private List<MatchesBody> similarityToResult(Map<Integer, Double> sims, List<RuleStructureResPO> ruleStructureResPOS) {
         List<MatchesBody> res = new ArrayList<>();
-        for (Pair<RuleStructureResPO, Double> pair : sims) {
-            if (pair.getRight() > 0) {
-                RuleStructureResPO ruleStructureResPO = pair.getLeft();
-                // triple：<similarity,ruleId,ruleContent>
-                if (pair.getRight() < 0.01) {
-                    break;
-                }
-                res.add(new MatchesBody(pair.getRight(), ruleStructureResPO.getTitle(), ruleStructureResPO.getText(), 0));
+        for (RuleStructureResPO po : ruleStructureResPOS) {
+            Integer id = po.getId();
+            Double similarity = sims.get(id);
+            if (similarity > 0.01) {
+                res.add(new MatchesBody(similarity,po.getTitle(),po.getText(),0));
             }
         }
         return res;
+    }
+
+    private void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
+        matchesBodyList.sort((o1, o2) -> o2.getSimilarity().compareTo(o1.getSimilarity()));
     }
 
 

@@ -1,12 +1,13 @@
 package com.example.rule.Util;
 
+import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
+import com.hankcs.hanlp.seg.Segment;
 import com.hankcs.hanlp.seg.common.Term;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,37 +18,98 @@ import java.util.*;
  */
 public class TermProcessingUtil {
     /**
-     * 计算词频
+     * 对文本进行分词
      *
-     * @param content 文本
-     * @return 词频列表
+     * @param context 待分词的文本
+     * @return 分词列表
      */
-    public static List<String> countTermFreq(String content) {
-        List<Term> termList = HanLP.segment(content.replace("\n", "，"));
-        List<String> wordList = new ArrayList<>();
-        for (Term t : termList) {
-            if (shouldInclude(t)) {
-                wordList.add(t.word);
-            }
-        }
-        return wordList;
+    public static List<Term> segment(String context) {
+        Segment segment = HanLP.newSegment().enableOrganizationRecognize(true);
+        return segment.seg(context);
     }
+
+    /**
+     * 词汇清洗：去除分词结果中不需要的词语
+     *
+     * @param termList 分词列表
+     * @return 清洗后的分词列表
+     */
+    private static List<Term> termCleanse(List<Term> termList) {
+        termList.removeIf(TermProcessingUtil::shouldBeCleansed);
+        return termList;
+    }
+
+    /**
+     * 清洗文本：把文本中不需要的内容清除
+     * 去除所有空格；将网址全部替换为空格；将所有前缀信息替换为空格；再将所有空白字符全部缩减为一个
+     *
+     * @param context 源文本
+     * @return 清洗后的文本
+     */
+    public static String cleanseContext(String context) {
+        // 去除所有网址
+        return context.replaceAll(" ", "")
+                .replaceAll("http[^\u4E00-\u9FA5]+", " ")
+                .replaceAll("[a-z]+:[0-9]+", "")
+                .replaceAll("[^0-9a-zA-Z\u4E00-\u9FA5，。、；：%]", " ")
+                .replaceAll("\\s+", " ");
+    }
+
 
     /**
      * 计算文本的词频
      *
-     * @param content 文本内容
+     * @param context 文本内容
      * @return 词频映射表
      */
-    public static Map<String, Integer> calTermFreq(String content) {
-        List<String> wordList = TermProcessingUtil.countTermFreq(content);
+    public static List<TermBody> calTermFreq(String context) {
+        List<Term> cleansedTermList = TermProcessingUtil.preprocessContextToTermList(context);
         // 计算每个词的词频
-        Map<String, Integer> frequency = new HashMap<>();
-        for (String word : wordList) {
-            frequency.put(word, frequency.getOrDefault(word, 0) + 1);
-        }
-        return frequency;
+        return TermProcessingUtil.countTerms(cleansedTermList);
     }
+
+    /**
+     * 计算词频：计算每一个term出现的次数
+     * 名词的权重更高
+     * 通常来说名词的长度越长，证明这个词语越专业化：我们认为长词的词频为2，短词的词频为1
+     * 如果该名词是相关法案natk，我们认为其词频为4
+     *
+     * @param termList 清洗后的分词列表
+     * @return 词频列表
+     */
+    private static List<TermBody> countTerms(List<Term> termList) {
+        Map<String, TermBody> termsFrequency = new HashMap<>();
+        for (Term t : termList) {
+            TermBody tFreq = termsFrequency.getOrDefault(t.word, new TermBody(t));
+            if (tFreq.getWord().length() > 2) {
+                tFreq.setFreq(tFreq.getFreq() + 2);
+            } else {
+                tFreq.setFreq(tFreq.getFreq() + 1);
+            }
+            termsFrequency.put(t.word, tFreq);
+        }
+        ArrayList<TermBody> termBodyList = new ArrayList<>(termsFrequency.values());
+        for (TermBody tq : termBodyList) {
+            if (tq.getNature().equals("natk")) {
+                tq.setFreq(tq.getFreq() + 3);
+            }
+        }
+        termBodyList.sort(Comparator.comparingInt(o -> -o.getFreq()));
+        return termBodyList;
+    }
+
+    /**
+     * 将原始文本处理为TermList
+     *
+     * @param context 原始文本
+     * @return termList
+     */
+    public static List<Term> preprocessContextToTermList(String context) {
+        context = TermProcessingUtil.cleanseContext(context);
+        List<Term> termList = TermProcessingUtil.segment(context);
+        return TermProcessingUtil.termCleanse(termList);
+    }
+
 
     /**
      * 是否应当将这个term纳入计算，词性属于名词、动词、词组
@@ -55,92 +117,90 @@ public class TermProcessingUtil {
      * @param term Term对象
      * @return 是否应当纳入
      */
-    public static boolean shouldInclude(Term term) {
-        return CoreStopWordDictionary.shouldInclude(term);
-//        String termPos = term.nature.toString();
+    public static boolean shouldBeCleansed(Term term) {
+        String termPos = term.nature.toString();
 //        boolean isTermPos = (termPos.startsWith("n") && (!termPos.equals("nr")))
 //                || termPos.equals("v")
 //                || termPos.equals("vn")
 //                || termPos.equals("phr");
-//        boolean isTermLen = term.word.length() > 1;
-//        return !(isTermPos && isTermLen);
+        boolean isTermPos = CoreStopWordDictionary.shouldInclude(term);
+        boolean isTermLen = term.word.length() > 1;
+        return !(isTermPos && isTermLen);
     }
+
 
     /**
      * 计算TF
      *
-     * @param frequency 词频
-     * @return TF矩阵
+     * @param inputTermsBodies 词频对象列表
      */
-    public static Map<String, Double> calTFs(Map<String, Integer> frequency) {
+    public static void calTF(List<TermBody> inputTermsBodies) {
         // 计算一条内规的总词数
         int termsNum = 0;
-        for (String termName : frequency.keySet()) {
-            termsNum += frequency.get(termName);
+        for (TermBody termBody : inputTermsBodies) {
+            termsNum += termBody.getFreq();
         }
 
         // 计算TF：词频/单篇文章（语料段落）中的所有词数量总和
-        Map<String, Double> tf = new HashMap<>();
-        for (String key : frequency.keySet()) {
-            tf.put(key, (double) frequency.get(key) / termsNum);
+        for (TermBody termBody : inputTermsBodies) {
+            termBody.setTf((double) termBody.getFreq() / termsNum);
         }
-        return tf;
     }
 
-    public static int calDF(String term, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
-        int df = 0;
+    public static void calDF(List<TermBody> inputTermsBodies, ArrayList<TermBody> allTermBodies) {
         // 对内规库的一条语料计算DF
-        for (Map.Entry<RuleStructureResPO, Map<String, Integer>> me : frequencyOfRules.entrySet()) {
-            Map<String, Integer> map = me.getValue();
-            if (map.containsKey(term)) df++;
+        for (TermBody termBody : inputTermsBodies) {
+            for (TermBody t : allTermBodies) {
+                if (termBody.nameEqual(t)) {
+                    termBody.setDf(termBody.getDf() + 1);
+                }
+            }
         }
-        return df;
     }
 
-    public static Map<String, Double> calIDFs(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
+    public static void calIDF(List<TermBody> inputTermsBodies, Collection<List<TermBody>> rulesTermsBodies) {
         // 计算IDF：先计算DF，即一个词在所有文章中出现的次数（每有一篇文章/一段语料中出现记为1，再取倒数
-        Map<String, Double> termsIDF = new HashMap<>();
-        for (String term : frequency.keySet()) {
-            int df = TermProcessingUtil.calDF(term, frequencyOfRules);
-            double idf = 0.0;
-            if (df > 0) {
-                idf = Math.log((double) frequencyOfRules.size() / df);
-            }
-            termsIDF.put(term, idf);
+        ArrayList<TermBody> allTermBodies = new ArrayList<>();
+        for (List<TermBody> termBody : rulesTermsBodies) {
+            allTermBodies.addAll(termBody);
         }
-        return termsIDF;
+        TermProcessingUtil.calDF(inputTermsBodies, allTermBodies);
+        for (TermBody termBody : inputTermsBodies) {
+            if (termBody.getDf() > 0) {
+                termBody.setIdf(Math.log((double) rulesTermsBodies.size() / termBody.getDf()));
+            }
+        }
     }
 
     /**
      * 计算一条内规的TF-IDF值
      *
-     * @param frequency        用一条内规（内规标题+内规内容）构建出的词频映射表
-     * @param frequencyOfRules 内规库中每个内规的词频集合
+     * @param rulesTermsBodies 内规库中每个内规的词频对象映射
      * @return term-TFIDF映射
      */
-    public static Map<String, Double> calTFIDF(Map<String, Integer> frequency, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules) {
-        Map<String, Double> termsTF = TermProcessingUtil.calTFs(frequency);
-        Map<String, Double> termsIDF = TermProcessingUtil.calIDFs(frequency, frequencyOfRules);
-        Map<String, Double> termsTFIDF = new HashMap<>();
-        for (String term : termsTF.keySet()) {
-            termsTFIDF.put(term, termsTF.get(term) * termsIDF.get(term));
+    public static void calTFIDF(List<TermBody> inputTermsBodies, Map<Integer, List<TermBody>> rulesTermsBodies) {
+        TermProcessingUtil.calTF(inputTermsBodies);
+        TermProcessingUtil.calIDF(inputTermsBodies, rulesTermsBodies.values());
+        for (List<TermBody> termBodies : rulesTermsBodies.values()) {
+            for (TermBody termBody : termBodies) {
+                termBody.setTfidf(termBody.getTf() * termBody.getIdf());
+            }
         }
-        return termsTFIDF;
     }
 
-    public static Map<RuleStructureResPO, Map<String, Integer>> generateTermsFreq(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
-        Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules = new HashMap<>();
+    public static Map<Integer, List<TermBody>> generateTermsFreq(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
+        Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
         File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
         if (rulesWordsFrequency.exists()) {
             // 如果有缓存则直接读缓存
-            frequencyOfRules = (Map<RuleStructureResPO, Map<String, Integer>>) IOUtil.readObject(rulesWordsFrequency);
+            frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
         } else {
             // 对内规库里检索到的每条内规执行如下：
             for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
                 // 获取一条内规的词频
-                Map<String, Integer> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
+                List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
                 // 存储内规词频
-                frequencyOfRules.put(ruleStructureResPO, ruleFrequency);
+                frequencyOfRules.put(ruleStructureResPO.getId(), ruleFrequency);
             }
             rulesWordsFrequency.createNewFile();
             IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
@@ -148,50 +208,51 @@ public class TermProcessingUtil {
         return frequencyOfRules;
     }
 
-    public static Map<RuleStructureResPO, Map<String, Double>> generateTermsTFIDF(List<RuleStructureResPO> ruleStructureResPOS, Map<RuleStructureResPO, Map<String, Integer>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
-        Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules = new HashMap<>();
+    public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
+        Map<Integer, List<TermBody>> tfidfOfRules;
         File rulesWordsTFIDF = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache);
         if (rulesWordsTFIDF.exists()) {
-            tfidfOfRules = (Map<RuleStructureResPO, Map<String, Double>>) IOUtil.readObject(rulesWordsTFIDF);
+            tfidfOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsTFIDF);
         } else {
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 计算一条内规的TF-IDF
-                Map<String, Double> tfidfOfRule = model.calTermsWeight(frequencyOfRules.get(ruleStructureResPO), frequencyOfRules);
-                tfidfOfRules.put(ruleStructureResPO, tfidfOfRule);
+            for (List<TermBody> termBodies : frequencyOfRules.values()) {
+                model.calTermsWeight(termBodies, frequencyOfRules);
             }
+            tfidfOfRules = frequencyOfRules;
             rulesWordsTFIDF.createNewFile();
             IOUtil.writeObject(rulesWordsTFIDF, tfidfOfRules);
         }
         return tfidfOfRules;
     }
 
-    public static List<Pair<RuleStructureResPO, Double>> calSimilarity(Map<String, Double> tfidfOfInput, Map<RuleStructureResPO, Map<String, Double>> tfidfOfRules) {
-        List<Pair<RuleStructureResPO, Double>> similarityBetweenInputAndRules = new ArrayList<>();
+    public static Map<Integer, Double> calSimilarity(List<TermBody> tfidfOfInput, Map<Integer, List<TermBody>> tfidfOfRules) {
+        Map<Integer, Double> similarityBetweenInputAndRules = new HashMap<>();
 
-        for (Map.Entry<RuleStructureResPO, Map<String, Double>> entry : tfidfOfRules.entrySet()) {
-            Map<String, Double> weight = entry.getValue();
-            Set<String> keywords = new HashSet<>();
+        for (Integer id : tfidfOfRules.keySet()) {
+            List<TermBody> termBodies = tfidfOfRules.get(id);
             // 计算向量模
             double a = 0.0;
-            for (Map.Entry<String, Double> me : tfidfOfInput.entrySet()) {
-                keywords.add(me.getKey());
-                a += me.getValue() * me.getValue();
+            for (TermBody t : tfidfOfInput) {
+                a += t.getTfidf() * t.getTfidf();
             }
             a = Math.sqrt(a);
+
             double b = 0.0;
-            for (Map.Entry<String, Double> me : weight.entrySet()) {
-                keywords.add(me.getKey());
-                b += me.getValue() * me.getValue();
+            for (TermBody t : termBodies) {
+                b += t.getTfidf() * t.getTfidf();
             }
             b = Math.sqrt(b);
 
             // 计算向量点积
             double ab = 0.0;
-            for (String word : keywords) {
-                ab += tfidfOfInput.getOrDefault(word, 0.0) * weight.getOrDefault(word, 0.0);
+            for (TermBody t : tfidfOfInput) {
+                for (TermBody tb : termBodies) {
+                    if (t.nameEqual(tb)) {
+                        ab += t.getTfidf() * tb.getTfidf();
+                    }
+                }
             }
             double cos = ab / (a * b);
-            similarityBetweenInputAndRules.add(Pair.of(entry.getKey(), cos));
+            similarityBetweenInputAndRules.put(id, cos);
         }
         return similarityBetweenInputAndRules;
     }

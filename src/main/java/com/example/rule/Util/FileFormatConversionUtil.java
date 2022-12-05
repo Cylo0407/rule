@@ -118,7 +118,7 @@ public class FileFormatConversionUtil {
     public static void main(String[] args) {
         try {
 //            jsonFileToExcelFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.txt"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.xls");
-            excelFileToJsonFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.xls"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果2.txt");
+            excelFileToJsonFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果_1128.xls"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果2.txt");
         } catch (IOException | BiffException e) {
             throw new RuntimeException(e);
         }
