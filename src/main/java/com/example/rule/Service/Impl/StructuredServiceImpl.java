@@ -2,6 +2,7 @@ package com.example.rule.Service.Impl;
 
 import com.example.rule.Dao.InterpretationStructureRepository;
 import com.example.rule.Dao.PenaltyCaseStructureRepository;
+import com.example.rule.Dao.RuleChapterStructureRepository;
 import com.example.rule.Dao.RuleStructureRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
@@ -30,6 +31,8 @@ public class StructuredServiceImpl implements StructuredService {
     @Resource
     RuleStructureRepository ruleStructureRepository;
     @Resource
+    RuleChapterStructureRepository ruleChapterStructureRepository;
+    @Resource
     TopLawsOfRuleRepository topLawsOfRuleRepository;
     @Resource
     PenaltyCaseStructureRepository penaltyCaseStructureRepository;
@@ -52,8 +55,9 @@ public class StructuredServiceImpl implements StructuredService {
         List<Pair<String, Integer>> splitRulesInfo = FilePreprocessUtil.split(texts);
 
         ArrayList<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
-
+        ArrayList<RuleChpterStructureResPO> ruleChpterStructureResPOS = new ArrayList<>();
         TopLawsOfRulePO topLawsOfRulePO = new TopLawsOfRulePO();
+
         // TODO 运用一下这部分文字
         String textBeforeChapter = "";
         String chapter = "";
@@ -61,17 +65,26 @@ public class StructuredServiceImpl implements StructuredService {
         String text = "";
 
         HashSet<String> relatedLaws = new HashSet<>();
+        StringBuffer sb = new StringBuffer();
         for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
             switch (ruleInfo.getRight()) {
                 case 0:
                     // 非章节内容
                     textBeforeChapter = ruleInfo.getLeft();
                     topLawsOfRulePO.setTitle(title);
+                    System.out.println(title);
                     break;
                 case 1:
                     // 第x章
+                    //遇到下一章，将之前章节保存
+                    ruleChpterStructureResPOS.add(new RuleChpterStructureResPO()
+                            .setTitle(title)
+                            .setChapter(chapter)
+                            .setText(sb.toString())
+                    );
                     chapter = ruleInfo.getLeft();
                     section = null;
+                    sb = new StringBuffer();
                     break;
                 case 2:
                     // 第x节
@@ -80,6 +93,7 @@ public class StructuredServiceImpl implements StructuredService {
                 case 3:
                     // 第x条
                     text = ruleInfo.getLeft();
+                    sb.append(text);
                     findAndStoreArticleTitleFromText(text, relatedLaws);
 
                     ruleStructureResPOS.add(new RuleStructureResPO()
@@ -95,6 +109,7 @@ public class StructuredServiceImpl implements StructuredService {
 
         topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
         ruleStructureRepository.saveAll(ruleStructureResPOS);
+        ruleChapterStructureRepository.saveAll(ruleChpterStructureResPOS);
         return true;
     }
 
@@ -155,7 +170,6 @@ public class StructuredServiceImpl implements StructuredService {
     }
 
     /**
-     *
      * @param srcDir 存储解读文本的目录
      * @param num    获取文本的数量
      * @return true
