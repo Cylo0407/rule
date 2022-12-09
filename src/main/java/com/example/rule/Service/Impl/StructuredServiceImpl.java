@@ -55,7 +55,7 @@ public class StructuredServiceImpl implements StructuredService {
         List<Pair<String, Integer>> splitRulesInfo = FilePreprocessUtil.split(texts);
 
         ArrayList<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
-        ArrayList<RuleChpterStructureResPO> ruleChpterStructureResPOS = new ArrayList<>();
+        ArrayList<RuleChapterStructureResPO> ruleChapterStructureResPOS = new ArrayList<>();
         TopLawsOfRulePO topLawsOfRulePO = new TopLawsOfRulePO();
 
         // TODO 运用一下这部分文字
@@ -66,26 +66,27 @@ public class StructuredServiceImpl implements StructuredService {
 
         HashSet<String> relatedLaws = new HashSet<>();
 
-        StringBuffer chapter_text = new StringBuffer();
+        StringBuilder chapter_text = new StringBuilder();
         for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
             switch (ruleInfo.getRight()) {
                 case 0:
                     // 非章节内容
                     textBeforeChapter = ruleInfo.getLeft();
                     topLawsOfRulePO.setTitle(title);
-                    System.out.println(title);
                     break;
                 case 1:
                     // 第x章
                     //遇到下一章，将之前章节保存
-                    ruleChpterStructureResPOS.add(new RuleChpterStructureResPO()
-                            .setTitle(title)
-                            .setChapter(chapter)
-                            .setText(chapter_text.toString())
-                    );
+                    if (!chapter.equals("")) {
+                        ruleChapterStructureResPOS.add(new RuleChapterStructureResPO()
+                                .setTitle(title)
+                                .setChapter(chapter)
+                                .setText(chapter_text.toString())
+                        );
+                    }
                     chapter = ruleInfo.getLeft();
                     section = null;
-                    chapter_text = new StringBuffer();
+                    chapter_text = new StringBuilder();
                     break;
                 case 2:
                     // 第x节
@@ -107,10 +108,17 @@ public class StructuredServiceImpl implements StructuredService {
                     break;
             }
         }
+        if (!chapter.equals("")) {
+            ruleChapterStructureResPOS.add(new RuleChapterStructureResPO()
+                    .setTitle(title)
+                    .setChapter(chapter)
+                    .setText(chapter_text.toString())
+            );
+        }
 
         topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
         ruleStructureRepository.saveAll(ruleStructureResPOS);
-        ruleChapterStructureRepository.saveAll(ruleChpterStructureResPOS);
+        ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
         return true;
     }
 
@@ -171,6 +179,8 @@ public class StructuredServiceImpl implements StructuredService {
     }
 
     /**
+     * TODO 去除关于相关法规提取的功能并移入ExtractController中
+     *
      * @param srcDir 存储解读文本的目录
      * @param num    获取文本的数量
      * @return true

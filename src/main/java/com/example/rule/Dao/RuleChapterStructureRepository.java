@@ -1,10 +1,10 @@
 package com.example.rule.Dao;
 
-import com.example.rule.Model.PO.RuleChpterStructureResPO;
+import com.example.rule.Model.PO.RuleChapterStructureResPO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface RuleChapterStructureRepository extends JpaRepository<RuleChpterStructureResPO, Integer> {
-    List<RuleChpterStructureResPO> findByTitle(String title);
+public interface RuleChapterStructureRepository extends JpaRepository<RuleChapterStructureResPO, Integer> {
+    List<RuleChapterStructureResPO> findByTitle(String title);
 }

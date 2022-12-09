@@ -15,7 +15,7 @@ import javax.persistence.*;
 @DynamicUpdate
 @Table(name = "rule_structure_by_chapter")
 @NoArgsConstructor
-public class RuleChpterStructureResPO{
+public class RuleChapterStructureResPO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

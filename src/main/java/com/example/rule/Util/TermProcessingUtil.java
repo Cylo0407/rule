@@ -3,15 +3,18 @@ package com.example.rule.Util;
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
-import com.example.rule.Model.PO.RuleChpterStructureResPO;
+import com.example.rule.Model.PO.RuleChapterStructureResPO;
 import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.Segment;
 import com.hankcs.hanlp.seg.common.Term;
+import org.apache.poi.ss.formula.functions.T;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -189,61 +192,63 @@ public class TermProcessingUtil {
         }
     }
 
-    public static Map<Integer, List<TermBody>> generateTermsFreq(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
+    public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS) throws IOException, ClassNotFoundException {
+        return generateTermsFreq(resPOS, "section");
+    }
+
+    public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS, String mode) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
-//        File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
-//        if (rulesWordsFrequency.exists()) {
-//            // 如果有缓存则直接读缓存
-//            frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
-//        } else {
-            // 对内规库里检索到的每条内规执行如下：
-            for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-                // 获取一条内规的词频
-                List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
-                // 存储内规词频
-                frequencyOfRules.put(ruleStructureResPO.getId(), ruleFrequency);
+        File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
+        if (rulesWordsFrequency.exists()) {
+            // 如果有缓存则直接读缓存
+            frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
+        } else {
+            if (mode.equals("chapter")) {
+                List<RuleChapterStructureResPO> ruleChapterStructureResPOS = (List<RuleChapterStructureResPO>) resPOS;
+                frequencyOfRules = generateTermsFreqByChapter(ruleChapterStructureResPOS);
+            } else if (mode.equals("section")) {
+                List<RuleStructureResPO> ruleStructureResPOS = (List<RuleStructureResPO>) resPOS;
+                frequencyOfRules = generateTermsFreqBySection(ruleStructureResPOS);
             }
-//            rulesWordsFrequency.createNewFile();
-//            IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
-//        }
+        }
+        rulesWordsFrequency.createNewFile();
+        IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
+        return frequencyOfRules;
+    }
+
+    private static Map<Integer, List<TermBody>> generateTermsFreqBySection(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
+        Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
+        for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
+            List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
+            frequencyOfRules.put(ruleStructureResPO.getId(), ruleFrequency);
+        }
         return frequencyOfRules;
     }
 
     //针对章节
-    public static Map<Integer, List<TermBody>> generateTermsFreqByChapter(List<RuleChpterStructureResPO> ruleChpterStructureResPOS) throws IOException, ClassNotFoundException {
+    private static Map<Integer, List<TermBody>> generateTermsFreqByChapter(List<RuleChapterStructureResPO> ruleChapterStructureResPOS) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
-//        File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
-//        if (rulesWordsFrequency.exists()) {
-//            // 如果有缓存则直接读缓存
-//            frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
-//        } else {
-            // 对内规库里检索到的每条内规执行如下：
-            for (RuleChpterStructureResPO ruleChpterStructureResPO : ruleChpterStructureResPOS) {
-                if (ruleChpterStructureResPO.getText() == null) continue;
-                // 获取一条内规的词频
-                List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleChpterStructureResPO.getTitle() + ruleChpterStructureResPO.getText());
-                // 存储内规词频
-                frequencyOfRules.put(ruleChpterStructureResPO.getId(), ruleFrequency);
-//            }
-//            rulesWordsFrequency.createNewFile();
-//            IOUtil.writeObject(rulesWordsFrequency, frequencyOfRules);
+        for (RuleChapterStructureResPO ruleChapterStructureResPO : ruleChapterStructureResPOS) {
+            if (ruleChapterStructureResPO.getText() == null) continue;
+            List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleChapterStructureResPO.getTitle() + ruleChapterStructureResPO.getText());
+            frequencyOfRules.put(ruleChapterStructureResPO.getId(), ruleFrequency);
         }
         return frequencyOfRules;
     }
 
     public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> tfidfOfRules;
-//        File rulesWordsTFIDF = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache);
-//        if (rulesWordsTFIDF.exists()) {
-//            tfidfOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsTFIDF);
-//        } else {
+        File rulesWordsTFIDF = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache);
+        if (rulesWordsTFIDF.exists()) {
+            tfidfOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsTFIDF);
+        } else {
             for (List<TermBody> termBodies : frequencyOfRules.values()) {
                 model.calTermsWeight(termBodies, frequencyOfRules);
             }
             tfidfOfRules = frequencyOfRules;
-//            rulesWordsTFIDF.createNewFile();
-//            IOUtil.writeObject(rulesWordsTFIDF, tfidfOfRules);
-//        }
+            rulesWordsTFIDF.createNewFile();
+            IOUtil.writeObject(rulesWordsTFIDF, tfidfOfRules);
+        }
         return tfidfOfRules;
     }
 

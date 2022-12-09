@@ -86,7 +86,7 @@ public class RetrieveServiceImpl implements RetrieveService {
     private List<MatchResVO> retrieve(String granularity) {
         // 读取内规库和输入库
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
-        List<RuleChpterStructureResPO> ruleChpterStructureResPOS = ruleChapterStructureRepository.findAll();
+        List<RuleChapterStructureResPO> ruleChapterStructureResPOS = ruleChapterStructureRepository.findAll();
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
 
         List<MatchResVO> resVOS = new ArrayList<>();
@@ -100,7 +100,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         try {
             // 获取or生成内规的tfidf映射
             frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS);
-            frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreqByChapter(ruleChpterStructureResPOS);
+            frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS,"chapter");
             tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules, this.model);
             tfidfOfRulesChpter = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesChapter, this.model);
         } catch (IOException | ClassNotFoundException e) {
@@ -110,55 +110,60 @@ public class RetrieveServiceImpl implements RetrieveService {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 对输入进行分词
             List<TermBody> inputTermBodies = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
+            Map<Integer, Double> similarityBetweenInputAndRules = null;
+            List<MatchesBody> matchesBodyList = null;
             if (granularity.equals("rule")) {
                 // 2. 计算输入中每个词的TF-IDF值
                 this.model.calTermsWeight(inputTermBodies, tfidfOfRules);
                 // sims：<ruleId，similarity>
-                Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
-                List<MatchesBody> matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
-                sortResultBySimilarity(matchesBodyList);
-                matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
-                matchResVO.setInput_text(interpretationStructureResPO.getText());
-                matchResVO.setRuleMatchRes(matchesBodyList);
+                similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
+                matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
             } else if (granularity.equals("ruleChapter")) {
-                // 2. 计算输入中每个词的TF-IDF值
                 this.model.calTermsWeight(inputTermBodies, tfidfOfRulesChpter);
-                // sims：<ruleId，similarity>
-                Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRulesChpter);
-                List<MatchesBody> matchesBodyList = similarityToResultByChapter(similarityBetweenInputAndRules, ruleChpterStructureResPOS);
-                sortResultBySimilarity(matchesBodyList);
-                matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
-                matchResVO.setInput_text(interpretationStructureResPO.getText());
-                matchResVO.setRuleMatchRes(matchesBodyList);
+                similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRulesChpter);
+                matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleChapterStructureResPOS);
             }
+            sortResultBySimilarity(Objects.requireNonNull(matchesBodyList));
+            matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
+            matchResVO.setInput_text(interpretationStructureResPO.getText());
+            matchResVO.setRuleMatchRes(matchesBodyList);
             resVOS.add(matchResVO);
         }
         return resVOS;
     }
 
-    private List<MatchesBody> similarityToResult(Map<Integer, Double> sims, List<RuleStructureResPO> ruleStructureResPOS) {
+    private List<MatchesBody> similarityToResult(Map<Integer, Double> sims, List<?> resPOS) {
         List<MatchesBody> res = new ArrayList<>();
-        for (RuleStructureResPO po : ruleStructureResPOS) {
-            Integer id = po.getId();
-            Double similarity = sims.get(id);
-            if (similarity > 0.01) {
-                res.add(new MatchesBody(similarity, po.getTitle(), po.getText(), 0));
+        for (Object po : resPOS) {
+            MatchesBody ruleResMatch = null;
+            if (po instanceof RuleStructureResPO) {
+                ruleResMatch = getMatchesBody(sims, (RuleStructureResPO) po);
+
+            } else if (po instanceof RuleChapterStructureResPO) {
+                ruleResMatch = getMatchesBody(sims, (RuleChapterStructureResPO) po);
+            }
+            if (ruleResMatch != null && ruleResMatch.getSimilarity() > 0.01) {
+                res.add(ruleResMatch);
             }
         }
         return res;
     }
 
-    private List<MatchesBody> similarityToResultByChapter(Map<Integer, Double> sims, List<RuleChpterStructureResPO> ruleChpterStructureResPOS) {
-        List<MatchesBody> res = new ArrayList<>();
-        for (RuleChpterStructureResPO po : ruleChpterStructureResPOS) {
-            if (po.getText() == null) continue;
-            Integer id = po.getId();
-            Double similarity = sims.get(id);
-            if (similarity > 0.01) {
-                res.add(new MatchesBody(similarity, po.getTitle(), po.getChapter() + '\n' + po.getText(), 0));
-            }
+    private MatchesBody getMatchesBody(Map<Integer, Double> sims, RuleStructureResPO po) {
+        Integer id = po.getId();
+        Double similarity = sims.get(id);
+        return new MatchesBody(similarity, po.getTitle(), po.getText(), 0);
+
+    }
+
+    private MatchesBody getMatchesBody(Map<Integer, Double> sims, RuleChapterStructureResPO po) {
+        if (po.getText() == null) {
+            return null;
         }
-        return res;
+        Integer id = po.getId();
+        Double similarity = sims.get(id);
+        return new MatchesBody(similarity, po.getTitle(), po.getChapter() + '\n' + po.getText(), 0);
+
     }
 
     private void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
