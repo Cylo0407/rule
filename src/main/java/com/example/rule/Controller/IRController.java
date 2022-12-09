@@ -29,6 +29,11 @@ public class IRController {
         return retrieveService.retrieveByBM25();
     }
 
+    @PostMapping("/chapter")
+    public List<MatchResVO> retrieveRulesChapter() {
+        return retrieveService.retrieveByChapter();
+    }
+
     @PostMapping("/penaltyCaseTopLaws")
     public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
         return retrieveService.penaltyCaseTopLawsRetrieve();

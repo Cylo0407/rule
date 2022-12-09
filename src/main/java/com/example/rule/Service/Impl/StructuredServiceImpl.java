@@ -65,7 +65,8 @@ public class StructuredServiceImpl implements StructuredService {
         String text = "";
 
         HashSet<String> relatedLaws = new HashSet<>();
-        StringBuffer sb = new StringBuffer();
+
+        StringBuffer chapter_text = new StringBuffer();
         for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
             switch (ruleInfo.getRight()) {
                 case 0:
@@ -80,11 +81,11 @@ public class StructuredServiceImpl implements StructuredService {
                     ruleChpterStructureResPOS.add(new RuleChpterStructureResPO()
                             .setTitle(title)
                             .setChapter(chapter)
-                            .setText(sb.toString())
+                            .setText(chapter_text.toString())
                     );
                     chapter = ruleInfo.getLeft();
                     section = null;
-                    sb = new StringBuffer();
+                    chapter_text = new StringBuffer();
                     break;
                 case 2:
                     // 第x节
@@ -93,7 +94,7 @@ public class StructuredServiceImpl implements StructuredService {
                 case 3:
                     // 第x条
                     text = ruleInfo.getLeft();
-                    sb.append(text);
+                    chapter_text.append(text);
                     findAndStoreArticleTitleFromText(text, relatedLaws);
 
                     ruleStructureResPOS.add(new RuleStructureResPO()

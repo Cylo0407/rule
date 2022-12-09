@@ -10,6 +10,8 @@ public interface RetrieveService {
 
     List<MatchResVO> retrieveByBM25();
 
+    List<MatchResVO> retrieveByChapter();
+
     List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve();
 
     List<TopLawsMatchResVO> interpretationTopLawsRetrieve();
