@@ -193,22 +193,20 @@ public class TermProcessingUtil {
     }
 
     public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS) throws IOException, ClassNotFoundException {
-        return generateTermsFreq(resPOS, "section");
-    }
-
-    public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS, String mode) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
         File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
         if (rulesWordsFrequency.exists()) {
             // 如果有缓存则直接读缓存
             frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
         } else {
-            if (mode.equals("chapter")) {
-                List<RuleChapterStructureResPO> ruleChapterStructureResPOS = (List<RuleChapterStructureResPO>) resPOS;
-                frequencyOfRules = generateTermsFreqByChapter(ruleChapterStructureResPOS);
-            } else if (mode.equals("section")) {
-                List<RuleStructureResPO> ruleStructureResPOS = (List<RuleStructureResPO>) resPOS;
-                frequencyOfRules = generateTermsFreqBySection(ruleStructureResPOS);
+            for (Object resPO : resPOS) {
+                if (resPO instanceof RuleStructureResPO) {
+                    RuleStructureResPO po = (RuleStructureResPO) resPO;
+                    frequencyOfRules.put(po.getId(), generateTermsFreqBySection(po));
+                } else if (resPO instanceof RuleChapterStructureResPO) {
+                    RuleChapterStructureResPO po = (RuleChapterStructureResPO) resPO;
+                    frequencyOfRules.put(po.getId(), generateTermsFreqByChapter(po));
+                }
             }
         }
         rulesWordsFrequency.createNewFile();
@@ -216,24 +214,17 @@ public class TermProcessingUtil {
         return frequencyOfRules;
     }
 
-    private static Map<Integer, List<TermBody>> generateTermsFreqBySection(List<RuleStructureResPO> ruleStructureResPOS) throws IOException, ClassNotFoundException {
-        Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
-        for (RuleStructureResPO ruleStructureResPO : ruleStructureResPOS) {
-            List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
-            frequencyOfRules.put(ruleStructureResPO.getId(), ruleFrequency);
-        }
-        return frequencyOfRules;
+    private static List<TermBody> generateTermsFreqBySection(RuleStructureResPO ruleStructureResPO) throws IOException, ClassNotFoundException {
+        return TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
     }
 
     //针对章节
-    private static Map<Integer, List<TermBody>> generateTermsFreqByChapter(List<RuleChapterStructureResPO> ruleChapterStructureResPOS) throws IOException, ClassNotFoundException {
-        Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
-        for (RuleChapterStructureResPO ruleChapterStructureResPO : ruleChapterStructureResPOS) {
-            if (ruleChapterStructureResPO.getText() == null) continue;
-            List<TermBody> ruleFrequency = TermProcessingUtil.calTermFreq(ruleChapterStructureResPO.getTitle() + ruleChapterStructureResPO.getText());
-            frequencyOfRules.put(ruleChapterStructureResPO.getId(), ruleFrequency);
+    private static List<TermBody> generateTermsFreqByChapter(RuleChapterStructureResPO ruleChapterStructureResPO) throws IOException, ClassNotFoundException {
+        if (ruleChapterStructureResPO.getText() == null) {
+            return new ArrayList<>();
         }
-        return frequencyOfRules;
+        return TermProcessingUtil.calTermFreq(ruleChapterStructureResPO.getTitle() + ruleChapterStructureResPO.getText());
+
     }
 
     public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {

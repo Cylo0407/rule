@@ -100,7 +100,7 @@ public class RetrieveServiceImpl implements RetrieveService {
         try {
             // 获取or生成内规的tfidf映射
             frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS);
-            frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS,"chapter");
+            frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS);
             tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules, this.model);
             tfidfOfRulesChpter = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesChapter, this.model);
         } catch (IOException | ClassNotFoundException e) {
