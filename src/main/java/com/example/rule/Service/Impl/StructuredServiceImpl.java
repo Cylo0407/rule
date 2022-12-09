@@ -116,6 +116,12 @@ public class StructuredServiceImpl implements StructuredService {
             );
         }
 
+        ruleChpterStructureResPOS.add(new RuleChpterStructureResPO()
+                .setTitle(title)
+                .setChapter(chapter)
+                .setText(chapter_text.toString())
+        );
+
         topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
         ruleStructureRepository.saveAll(ruleStructureResPOS);
         ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
