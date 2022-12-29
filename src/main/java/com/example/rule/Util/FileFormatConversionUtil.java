@@ -109,7 +109,7 @@ public class FileFormatConversionUtil {
     }
 
     public static void writeJson(List<MatchResVO> matchResVOList, String jsonFileName) throws IOException {
-        Writer writer = Files.newBufferedWriter(Paths.get(jsonFileName),StandardCharsets.UTF_8);
+        Writer writer = Files.newBufferedWriter(Paths.get(jsonFileName), StandardCharsets.UTF_8);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         gson.toJson(matchResVOList, writer);
         writer.close();

@@ -1,9 +1,6 @@
 package com.example.rule.Service.Impl;
 
-import com.example.rule.Dao.InterpretationStructureRepository;
-import com.example.rule.Dao.PenaltyCaseStructureRepository;
-import com.example.rule.Dao.RuleChapterStructureRepository;
-import com.example.rule.Dao.RuleStructureRepository;
+import com.example.rule.Dao.*;
 import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
@@ -33,6 +30,8 @@ public class StructuredServiceImpl implements StructuredService {
     @Resource
     RuleChapterStructureRepository ruleChapterStructureRepository;
     @Resource
+    RuleArticleStructureRepository ruleArticleStructureRepository;
+    @Resource
     TopLawsOfRuleRepository topLawsOfRuleRepository;
     @Resource
     PenaltyCaseStructureRepository penaltyCaseStructureRepository;
@@ -42,6 +41,7 @@ public class StructuredServiceImpl implements StructuredService {
     InterpretationStructureRepository interpretationStructureRepository;
     @Resource
     TopLawsOfInterpretationRepository topLawsOfInterpretationRepository;
+
 
     /**
      * 结构化内规并提取上位法
@@ -64,15 +64,12 @@ public class StructuredServiceImpl implements StructuredService {
         String section = null;
         String text = "";
 
-        HashSet<String> relatedLaws = new HashSet<>();
-
         StringBuilder chapter_text = new StringBuilder();
         for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
             switch (ruleInfo.getRight()) {
                 case 0:
                     // 非章节内容
                     textBeforeChapter = ruleInfo.getLeft();
-                    topLawsOfRulePO.setTitle(title);
                     break;
                 case 1:
                     // 第x章
@@ -96,7 +93,6 @@ public class StructuredServiceImpl implements StructuredService {
                     // 第x条
                     text = ruleInfo.getLeft();
                     chapter_text.append(text);
-                    findAndStoreArticleTitleFromText(text, relatedLaws);
 
                     ruleStructureResPOS.add(new RuleStructureResPO()
                             .setTitle(title)
@@ -115,13 +111,60 @@ public class StructuredServiceImpl implements StructuredService {
                     .setText(chapter_text.toString())
             );
         }
+        StringBuilder article_text = new StringBuilder();
+        for (int i = 0; i < ruleChapterStructureResPOS.size(); i++) {
+            RuleChapterStructureResPO po = ruleChapterStructureResPOS.get(i);
+            chapter = po.getChapter();
+            if (i == 1) {
+                // 如果是第二章
+                if (chapter.contains("组织") || chapter.contains("职责") || chapter.contains("规定")) {
+                    continue;
+                }
+            } else if (i == 2) {
+                // 如果是第三章
+                if (chapter.contains("内容") || chapter.contains("要求") || chapter.contains("规定") || chapter.contains("对象") || chapter.contains("条件")) {
+                    continue;
+                }
+            } else if (i == ruleChapterStructureResPOS.size() - 2) {
+                // 如果是倒数第二章
+                if (chapter.contains("罚则") || chapter.contains("操作") || chapter.contains("责任") || chapter.contains("管理") || chapter.contains("其他") || chapter.contains("要求")) {
+                    continue;
+                }
+            }
+            article_text.append(ruleChapterStructureResPOS.get(i).getText()).append("\n");
+        }
 
-        topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
         ruleStructureRepository.saveAll(ruleStructureResPOS);
         ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
+
+        RuleArticleStructureResPO ruleArticleStructureResPO = new RuleArticleStructureResPO();
+        ruleArticleStructureResPO.setTitle(title);
+        ruleArticleStructureResPO.setText(article_text.toString());
+        ruleArticleStructureRepository.save(ruleArticleStructureResPO);
+
+//        getRelevantRule(splitRulesInfo, title, topLawsOfRulePO);
         return true;
     }
 
+    private void getRelevantRule(List<Pair<String, Integer>> splitRulesInfo, String title, TopLawsOfRulePO topLawsOfRulePO) {
+        HashSet<String> relatedLaws = new HashSet<>();
+        for (Pair<String, Integer> ruleInfo : splitRulesInfo) {
+            switch (ruleInfo.getRight()) {
+                case 0:
+                    // 非章节内容
+                    topLawsOfRulePO.setTitle(title);
+                    break;
+                case 3:
+                    // 第x条
+                    String text = ruleInfo.getLeft();
+                    findAndStoreArticleTitleFromText(text, relatedLaws);
+                    break;
+                default:
+                    break;
+            }
+        }
+        topLawsOfRuleRepository.save(topLawsOfRulePO.setLaws(relatedLaws));
+    }
 
     /**
      * 结构化指定数目的处罚案例文本
