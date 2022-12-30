@@ -112,10 +112,12 @@ public class StructuredServiceImpl implements StructuredService {
             );
         }
         StringBuilder article_text = new StringBuilder();
-        for (int i = 0; i < ruleChapterStructureResPOS.size(); i++) {
+        for (int i = 0; i < ruleChapterStructureResPOS.size() - 1; i++) {
             RuleChapterStructureResPO po = ruleChapterStructureResPOS.get(i);
             chapter = po.getChapter();
-            if (i == 1) {
+            if (i == 0) {
+                continue;
+            } else if (i == 1) {
                 // 如果是第二章
                 if (chapter.contains("组织") || chapter.contains("职责") || chapter.contains("规定")) {
                     continue;
@@ -131,16 +133,18 @@ public class StructuredServiceImpl implements StructuredService {
                     continue;
                 }
             }
-            article_text.append(ruleChapterStructureResPOS.get(i).getText()).append("\n");
+            article_text.append(ruleChapterStructureResPOS.get(i).getText());
         }
 
         ruleStructureRepository.saveAll(ruleStructureResPOS);
         ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
 
-        RuleArticleStructureResPO ruleArticleStructureResPO = new RuleArticleStructureResPO();
-        ruleArticleStructureResPO.setTitle(title);
-        ruleArticleStructureResPO.setText(article_text.toString());
-        ruleArticleStructureRepository.save(ruleArticleStructureResPO);
+        if(!article_text.toString().equals("")){
+            RuleArticleStructureResPO ruleArticleStructureResPO = new RuleArticleStructureResPO();
+            ruleArticleStructureResPO.setTitle(title);
+            ruleArticleStructureResPO.setText(article_text.toString());
+            ruleArticleStructureRepository.save(ruleArticleStructureResPO);
+        }
 
 //        getRelevantRule(splitRulesInfo, title, topLawsOfRulePO);
         return true;
@@ -188,14 +192,14 @@ public class StructuredServiceImpl implements StructuredService {
                 penaltyCaseContents.add(FilePreprocessUtil.dealAndStorePenaltyCaseContent(caseLine.get(3)));
             }
 
-            ArrayList<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOS = new ArrayList<>();
+//            ArrayList<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOS = new ArrayList<>();
             ArrayList<PenaltyCaseStructureResPO> penaltyCaseStructureResPOS = new ArrayList<>();
             for (int i = 0; i < num; i++) {
-                TopLawsOfPenaltyCasePO topLawsOfPenaltyCasePO = new TopLawsOfPenaltyCasePO();
+//                TopLawsOfPenaltyCasePO topLawsOfPenaltyCase = new TopLawsOfPenaltyCasePO();
 
                 String title = penaltyCaseInfos.get(i).get(1);
                 String docId = penaltyCaseInfos.get(i).get(2);
-                topLawsOfPenaltyCasePO.setTitle(title).setDocId(docId);
+//                topLawsOfPenaltyCasePO.setTitle(title).setDocId(docId);
 
                 HashSet<String> relatedLaws = new HashSet<>();
                 findAndStoreArticleTitleFromText(title, relatedLaws);
@@ -208,10 +212,10 @@ public class StructuredServiceImpl implements StructuredService {
                             .setDocId(docId)
                             .setText(context));
                 }
-                topLawsOfPenaltyCasePOS.add(topLawsOfPenaltyCasePO.setLaws(relatedLaws));
+//                topLawsOfPenaltyCasePOS.add(topLawsOfPenaltyCasePO.setLaws(relatedLaws));
             }
 
-            topLawsOfPenaltyCaseRepository.saveAll(topLawsOfPenaltyCasePOS);
+//            topLawsOfPenaltyCaseRepository.saveAll(topLawsOfPenaltyCasePOS);
             penaltyCaseStructureRepository.saveAll(penaltyCaseStructureResPOS);
 
         } catch (IOException e) {
@@ -253,14 +257,14 @@ public class StructuredServiceImpl implements StructuredService {
                 interpretationOfLawsInfos.add(interpretationOfLawsInfo);
             }
 
-            ArrayList<TopLawsOfInterpretationPO> topLawsOfInterpretationPOS = new ArrayList<>();
+//            ArrayList<TopLawsOfInterpretationPO> topLawsOfInterpretationPOS = new ArrayList<>();
             ArrayList<InterpretationStructureResPO> interpretationStructureResPOS = new ArrayList<>();
             for (int i = 0; i < num; i++) {
-                TopLawsOfInterpretationPO topLawsOfInterpretationPO = new TopLawsOfInterpretationPO();
+//                TopLawsOfInterpretationPO topLawsOfInterpretationPO = new TopLawsOfInterpretationPO();
 
                 String title = interpretationOfLawsInfos.get(i).get(0);
                 String docId = interpretationOfLawsInfos.get(i).get(1);
-                topLawsOfInterpretationPO.setTitle(title).setDocId(docId);
+//                topLawsOfInterpretationPO.setTitle(title).setDocId(docId);
 
                 HashSet<String> relatedLaws = new HashSet<>();
                 findAndStoreArticleTitleFromText(title, relatedLaws);
@@ -273,10 +277,10 @@ public class StructuredServiceImpl implements StructuredService {
                             .setDocId(docId)
                             .setText(context));
                 }
-                topLawsOfInterpretationPOS.add(topLawsOfInterpretationPO.setLaws(relatedLaws));
+//                topLawsOfInterpretationPOS.add(topLawsOfInterpretationPO.setLaws(relatedLaws));
             }
 
-            topLawsOfInterpretationRepository.saveAll(topLawsOfInterpretationPOS);
+//            topLawsOfInterpretationRepository.saveAll(topLawsOfInterpretationPOS);
             interpretationStructureRepository.saveAll(interpretationStructureResPOS);
 
         } catch (IOException e) {

@@ -1,6 +1,7 @@
 package com.example.rule.Controller;
 
 
+import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Service.StructuredService;
 import com.example.rule.Util.IOUtil;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class StructuredController {
 
     @PostMapping("/rule")
     public boolean structureRules() {
-        String filePath = "F:\\魔鬼的力量\\_A研究生资料\\面向互联网+助教材料\\标准版内规";
+        String filePath = PathConfig.rulesPath;
         File dir = new File(filePath);
         structure(dir);
         return true;
@@ -44,7 +45,7 @@ public class StructuredController {
 
     @PostMapping("/input")
     public boolean structureInputs() {
-        structuredService.preDealInterpretationContents("F:\\DataSet\\银行内规项目数据集\\外规输入候选集合", 4);
+        structuredService.preDealInterpretationContents(PathConfig.inputPath, 441);
         return true;
     }
 

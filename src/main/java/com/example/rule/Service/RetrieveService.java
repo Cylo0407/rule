@@ -12,6 +12,8 @@ public interface RetrieveService {
 
     List<MatchResVO> retrieveByChapter();
 
+    List<MatchResVO> retrieveByArticle();
+
     List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve();
 
     List<TopLawsMatchResVO> interpretationTopLawsRetrieve();

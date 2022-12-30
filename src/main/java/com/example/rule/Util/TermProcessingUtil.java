@@ -3,6 +3,7 @@ package com.example.rule.Util;
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
+import com.example.rule.Model.PO.RuleArticleStructureResPO;
 import com.example.rule.Model.PO.RuleChapterStructureResPO;
 import com.example.rule.Model.PO.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
@@ -206,6 +207,9 @@ public class TermProcessingUtil {
                 } else if (resPO instanceof RuleChapterStructureResPO) {
                     RuleChapterStructureResPO po = (RuleChapterStructureResPO) resPO;
                     frequencyOfRules.put(po.getId(), generateTermsFreqByChapter(po));
+                } else if (resPO instanceof RuleArticleStructureResPO) {
+                    RuleArticleStructureResPO po = (RuleArticleStructureResPO) resPO;
+                    frequencyOfRules.put(po.getId(), generateTermsFreqByArticle(po));
                 }
             }
         }
@@ -214,17 +218,23 @@ public class TermProcessingUtil {
         return frequencyOfRules;
     }
 
-    private static List<TermBody> generateTermsFreqBySection(RuleStructureResPO ruleStructureResPO) throws IOException, ClassNotFoundException {
+    private static List<TermBody> generateTermsFreqBySection(RuleStructureResPO ruleStructureResPO) {
         return TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
     }
 
     //针对章节
-    private static List<TermBody> generateTermsFreqByChapter(RuleChapterStructureResPO ruleChapterStructureResPO) throws IOException, ClassNotFoundException {
+    private static List<TermBody> generateTermsFreqByChapter(RuleChapterStructureResPO ruleChapterStructureResPO) {
         if (ruleChapterStructureResPO.getText() == null) {
             return new ArrayList<>();
         }
         return TermProcessingUtil.calTermFreq(ruleChapterStructureResPO.getTitle() + ruleChapterStructureResPO.getText());
+    }
 
+    private static List<TermBody> generateTermsFreqByArticle(RuleArticleStructureResPO ruleArticleStructureResPO) {
+        if (ruleArticleStructureResPO.getText() == null) {
+            return new ArrayList<>();
+        }
+        return TermProcessingUtil.calTermFreq(ruleArticleStructureResPO.getTitle() + ruleArticleStructureResPO.getText());
     }
 
     public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
