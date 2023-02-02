@@ -1,7 +1,6 @@
 package com.example.rule.Util;
 
 import com.example.rule.Model.Body.TermBody;
-import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.PO.RuleArticleStructureResPO;
 import com.example.rule.Model.PO.RuleChapterStructureResPO;
@@ -10,12 +9,9 @@ import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.Segment;
 import com.hankcs.hanlp.seg.common.Term;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -193,9 +189,9 @@ public class TermProcessingUtil {
         }
     }
 
-    public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS) throws IOException, ClassNotFoundException {
+    public static Map<Integer, List<TermBody>> generateTermsFreq(List<?> resPOS, String pathName) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> frequencyOfRules = new HashMap<>();
-        File rulesWordsFrequency = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache);
+        File rulesWordsFrequency = new File(pathName);
         if (rulesWordsFrequency.exists()) {
             // 如果有缓存则直接读缓存
             frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
@@ -237,9 +233,9 @@ public class TermProcessingUtil {
         return TermProcessingUtil.calTermFreq(ruleArticleStructureResPO.getTitle() + ruleArticleStructureResPO.getText());
     }
 
-    public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, IR_Model model) throws IOException, ClassNotFoundException {
+    public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, String pathName, IR_Model model) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> tfidfOfRules;
-        File rulesWordsTFIDF = new File(PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache);
+        File rulesWordsTFIDF = new File(pathName);
         if (rulesWordsTFIDF.exists()) {
             tfidfOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsTFIDF);
         } else {

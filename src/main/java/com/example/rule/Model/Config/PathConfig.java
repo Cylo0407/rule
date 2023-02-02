@@ -21,6 +21,14 @@ public class PathConfig {
 
     public static String termsTFIDFCache = "terms_TFIDF_cache.txt";
 
+    public static String chapterTermsFrequencyCache = "chapter_terms_frequency_cache.txt";
+
+    public static String chapterTermsTFIDFCache = "chapter_terms_TFIDF_cache.txt";
+
+    public static String articleTermsFrequencyCache = "article_terms_frequency_cache.txt";
+
+    public static String articleTermsTFIDFCache = "article_terms_TFIDF_cache.txt";
+
     public static String getFileMainName(String fileName) {
         return fileName.replaceFirst("\\..*", "");
     }

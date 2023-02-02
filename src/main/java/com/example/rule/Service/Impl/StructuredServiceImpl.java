@@ -246,10 +246,8 @@ public class StructuredServiceImpl implements StructuredService {
                 String line = linesReader.readLine();
                 while (line != null) {
                     if (line.startsWith("title:")) {
-                        System.out.println(line);
                         interpretationOfLawsInfo.add(line.replace("title:", ""));
                     } else if (line.startsWith("docId:")) {
-                        System.out.println(line);
                         interpretationOfLawsInfo.add(line.replace("docId:", ""));
                     } else if (line.startsWith("text:")) {
                         interpretationOfLawsContents.add(FilePreprocessUtil.dealAndStoreInterpretationOfLawsContent(line));
@@ -259,15 +257,14 @@ public class StructuredServiceImpl implements StructuredService {
                 interpretationOfLawsInfos.add(interpretationOfLawsInfo);
             }
 
-            System.out.println(interpretationOfLawsInfos.size());
 //            ArrayList<TopLawsOfInterpretationPO> topLawsOfInterpretationPOS = new ArrayList<>();
             ArrayList<InterpretationStructureResPO> interpretationStructureResPOS = new ArrayList<>();
             int idx = 0;
             for (int i = 0; i < num; i++) {
 //                TopLawsOfInterpretationPO topLawsOfInterpretationPO = new TopLawsOfInterpretationPO();
-                if (interpretationOfLawsInfos.get(i).size() < 2) continue;
+//                mac隐藏文件
+//                if (interpretationOfLawsInfos.get(i).size() < 2) continue;
 
-                System.out.println(interpretationOfLawsInfos.get(i));
                 String title = interpretationOfLawsInfos.get(i).get(0).trim();
                 String docId = interpretationOfLawsInfos.get(i).get(1).trim();
 //                topLawsOfInterpretationPO.setTitle(title).setDocId(docId);

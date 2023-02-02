@@ -6,6 +6,7 @@ import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.Body.TermBody;
+import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.IRModel.VSM;
 import com.example.rule.Model.PO.*;
@@ -112,23 +113,37 @@ public class RetrieveServiceImpl implements RetrieveService {
             // 获取or生成内规的tfidf映射
             switch (granularity) {
                 case "rule":
-                    frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS);
-                    tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules, this.model);
+                    frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache
+                    );
+                    tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache,
+                            this.model
+                    );
                     break;
                 case "ruleChapter":
-                    frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS);
-                    tfidfOfRulesChapter = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesChapter, this.model);
+                    frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.chapterTermsFrequencyCache
+                    );
+                    tfidfOfRulesChapter = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesChapter,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.chapterTermsTFIDFCache,
+                            this.model
+                    );
                     break;
                 case "ruleArticle":
-                    frequencyOfRulesArticle = TermProcessingUtil.generateTermsFreq(ruleArticleStructureResPOS);
-                    tfidfOfRulesArticle = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesArticle, this.model);
+                    frequencyOfRulesArticle = TermProcessingUtil.generateTermsFreq(ruleArticleStructureResPOS,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.articleTermsFrequencyCache
+                    );
+                    tfidfOfRulesArticle = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesArticle,
+                            PathConfig.termsInfoCache + File.separator + PathConfig.articleTermsTFIDFCache,
+                            this.model
+                    );
                     break;
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
-            System.out.println(interpretationStructureResPO.getId());
             MatchResVO matchResVO = new MatchResVO();
             // 1. 对输入进行分词
             List<TermBody> inputTermBodies = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
@@ -186,7 +201,6 @@ public class RetrieveServiceImpl implements RetrieveService {
         Integer id = po.getId();
         Double similarity = sims.get(id);
         return new MatchesBody(similarity, po.getTitle(), po.getText(), 0);
-
     }
 
     /**

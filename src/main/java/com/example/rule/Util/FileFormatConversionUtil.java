@@ -24,21 +24,15 @@ import java.util.List;
 
 
 public class FileFormatConversionUtil {
-    public static void jsonFileToExcelFile(File jsonFile, String excelFileName) throws IOException, WriteException {
-        JsonReader jsonReader = new JsonReader(new InputStreamReader(Files.newInputStream(jsonFile.toPath()), StandardCharsets.UTF_8));
-        Gson gson = new GsonBuilder().create();
-
-        List<MatchResVO> matchResVOList = new ArrayList<>();
-        jsonReader.beginArray();
-        while (jsonReader.hasNext()) {
-            MatchResVO matchResVO = gson.fromJson(jsonReader, MatchResVO.class);
-            matchResVOList.add(matchResVO);
-        }
-        jsonReader.close();
-        writeExcel(matchResVOList, excelFileName);
+    public static void jsonFileToExcelFile(File jsonFile, String excelFileName) throws WriteException, IOException {
+        writeExcel(readJson(jsonFile), excelFileName);
     }
 
     public static void excelFileToJsonFile(File excelFile, String jsonFileName) throws IOException, BiffException {
+        writeJson(readExcel(excelFile), jsonFileName);
+    }
+
+    public static List<MatchResVO> readExcel(File excelFile) throws IOException, BiffException {
         Workbook workbook = Workbook.getWorkbook(Files.newInputStream(excelFile.toPath()));
 
         List<MatchResVO> matchResVOList = new ArrayList<>();
@@ -63,7 +57,21 @@ public class FileFormatConversionUtil {
             matchResVOList.add(matchResVO);
         }
         workbook.close();
-        writeJson(matchResVOList, jsonFileName);
+        return matchResVOList;
+    }
+
+    public static List<MatchResVO> readJson(File jsonFile) throws IOException {
+        JsonReader jsonReader = new JsonReader(new InputStreamReader(Files.newInputStream(jsonFile.toPath()), StandardCharsets.UTF_8));
+        Gson gson = new GsonBuilder().create();
+
+        List<MatchResVO> matchResVOList = new ArrayList<>();
+        jsonReader.beginArray();
+        while (jsonReader.hasNext()) {
+            MatchResVO matchResVO = gson.fromJson(jsonReader, MatchResVO.class);
+            matchResVOList.add(matchResVO);
+        }
+        jsonReader.close();
+        return matchResVOList;
     }
 
     public static void writeExcel(List<MatchResVO> matchResVOList, String excelFileName) throws IOException, WriteException {
