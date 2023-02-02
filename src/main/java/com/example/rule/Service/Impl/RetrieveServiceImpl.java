@@ -15,6 +15,7 @@ import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
+import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TermProcessingUtil;
 import com.example.rule.Model.IRModel.Algorithm.BM25;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,7 +57,7 @@ public class RetrieveServiceImpl implements RetrieveService {
      * @return resVO: 每一条解释与内规之间的相似度
      */
     @Override
-    public List<MatchResVO> retrieveByTFIDF() {
+    public Boolean retrieveByTFIDF() {
         this.setModel(new VSM());
         return this.retrieve("rule");
     }
@@ -68,7 +69,7 @@ public class RetrieveServiceImpl implements RetrieveService {
      * 3、单词与Query之间的相关性；
      */
     @Override
-    public List<MatchResVO> retrieveByBM25() {
+    public Boolean retrieveByBM25() {
         this.setModel(new BM25());
         return this.retrieve("rule");
     }
@@ -77,18 +78,19 @@ public class RetrieveServiceImpl implements RetrieveService {
      * 通过BM25算法计算政策解读与内规章节总体之间的相似度
      */
     @Override
-    public List<MatchResVO> retrieveByChapter() {
+    public Boolean retrieveByChapter() {
         this.setModel(new BM25());
         return this.retrieve("ruleChapter");
     }
 
     @Override
-    public List<MatchResVO> retrieveByArticle() {
+    public Boolean retrieveByArticle() {
         this.setModel(new BM25());
         return this.retrieve("ruleArticle");
     }
 
-    private List<MatchResVO> retrieve(String granularity) {
+    //    private List<MatchResVO> retrieve(String granularity) {
+    private Boolean retrieve(String granularity) {
         // 读取内规库和输入库
         List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
         List<RuleChapterStructureResPO> ruleChapterStructureResPOS = ruleChapterStructureRepository.findAll();
@@ -96,7 +98,7 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
 
-        List<MatchResVO> resVOS = new ArrayList<>();
+//        List<MatchResVO> resVOS = new ArrayList<>();
 
         //frequencyOfRules: <ruleId,<keyword,frequency>>
         Map<Integer, List<TermBody>> frequencyOfRules = null;
@@ -126,6 +128,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             throw new RuntimeException(e);
         }
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
+            System.out.println(interpretationStructureResPO.getId());
             MatchResVO matchResVO = new MatchResVO();
             // 1. 对输入进行分词
             List<TermBody> inputTermBodies = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
@@ -154,9 +157,11 @@ public class RetrieveServiceImpl implements RetrieveService {
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(matchesBodyList);
-            resVOS.add(matchResVO);
+            IOUtil.createJsonRes(interpretationStructureResPO.getTitle(), matchResVO);
+//            resVOS.add(matchResVO);
         }
-        return resVOS;
+//        return resVOS;
+        return true;
     }
 
     private List<MatchesBody> similarityToResult(Map<Integer, Double> sims, List<?> resPOS) {

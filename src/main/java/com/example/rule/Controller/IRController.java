@@ -20,22 +20,22 @@ public class IRController {
     RetrieveService retrieveService;
 
     @PostMapping("/tfidf")
-    public List<MatchResVO> retrieveRulesByTFIDF() {
+    public Boolean retrieveRulesByTFIDF() {
         return retrieveService.retrieveByTFIDF();
     }
 
     @PostMapping("/BM25")
-    public List<MatchResVO> retrieveRulesByBM25() {
+    public Boolean retrieveRulesByBM25() {
         return retrieveService.retrieveByBM25();
     }
 
     @PostMapping("/chapter")
-    public List<MatchResVO> retrieveRulesChapter() {
+    public Boolean retrieveRulesChapter() {
         return retrieveService.retrieveByChapter();
     }
 
     @PostMapping("/retrieveByArticle")
-    public List<MatchResVO> retrieveRulesArticle() {
+    public Boolean retrieveRulesArticle() {
         return retrieveService.retrieveByArticle();
     }
 

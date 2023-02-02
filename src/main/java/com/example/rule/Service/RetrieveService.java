@@ -6,13 +6,13 @@ import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 import java.util.List;
 
 public interface RetrieveService {
-    List<MatchResVO> retrieveByTFIDF();
+    Boolean retrieveByTFIDF();
 
-    List<MatchResVO> retrieveByBM25();
+    Boolean retrieveByBM25();
 
-    List<MatchResVO> retrieveByChapter();
+    Boolean retrieveByChapter();
 
-    List<MatchResVO> retrieveByArticle();
+    Boolean retrieveByArticle();
 
     List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve();
 

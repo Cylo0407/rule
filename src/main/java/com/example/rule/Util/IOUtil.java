@@ -1,11 +1,14 @@
 package com.example.rule.Util;
 
 import com.example.rule.Model.Config.PathConfig;
+import com.example.rule.Model.VO.MatchResVO;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import com.alibaba.fastjson.JSON;
+
 
 import java.io.*;
 import java.nio.file.Files;
@@ -116,5 +119,32 @@ public class IOUtil {
             }
         }
         return file;
+    }
+
+
+    /**
+     * 输出json结果文件
+     *
+     * @param fileName 外规文件名称
+     * @param matchResVO 匹配结果
+     *
+     * @return 目标文件
+     */
+    public static void createJsonRes(String fileName, MatchResVO matchResVO) {
+        String filePath = PathConfig.interpretationJsonPath + '/' + fileName + ".json";
+        System.out.println(filePath);
+        File file = new File(filePath);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+                Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+                String matchData = JSON.toJSONString(matchResVO);
+                writer.write(matchData);
+                writer.flush();
+                writer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
