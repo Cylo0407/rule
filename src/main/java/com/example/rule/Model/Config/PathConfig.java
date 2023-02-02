@@ -9,6 +9,7 @@ public class PathConfig {
     public static String lawsJsonInputPath = "/Users/cyl/Downloads/内规外化/数据集/最终外规数据/laws_json";
     public static String regulationsJsonInputPath = "/Users/cyl/Downloads/内规外化/数据集/最终外规数据/regulations_json";
 
+
     public static String interpretationJsonPath = "/Users/cyl/Downloads/内规外化/json结果/政策解读/Interpretation";
     public static String lawsJsonPath = "/Users/cyl/Downloads/内规外化/json结果/laws_json";
     public static String regulationsJsonPath = "/Users/cyl/Downloads/内规外化/json结果/regulations_json";
