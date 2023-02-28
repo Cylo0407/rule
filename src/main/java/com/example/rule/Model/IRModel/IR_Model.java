@@ -1,7 +1,6 @@
 package com.example.rule.Model.IRModel;
 
 import com.example.rule.Model.Body.TermBody;
-import com.example.rule.Model.PO.RuleStructureResPO;
 
 import java.util.List;
 import java.util.Map;

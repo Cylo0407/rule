@@ -5,11 +5,12 @@ import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.PO.*;
-import com.example.rule.Model.PO.TopLaws.TopLawsOfInterpretationPO;
-import com.example.rule.Model.PO.TopLaws.TopLawsOfPenaltyCasePO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Service.StructuredService;
-import com.example.rule.Util.FilePreprocessUtil;
+import com.example.rule.Util.FileUtils.FilePreprocessUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +55,7 @@ public class StructuredServiceImpl implements StructuredService {
         // 拿取所有切分后的内规文本
         List<Pair<String, Integer>> splitRulesInfo = FilePreprocessUtil.split(texts);
 
-        ArrayList<RuleStructureResPO> ruleStructureResPOS = new ArrayList<>();
+        ArrayList<RuleItemStructureResPO> ruleItemStructureResPOS = new ArrayList<>();
         ArrayList<RuleChapterStructureResPO> ruleChapterStructureResPOS = new ArrayList<>();
         TopLawsOfRulePO topLawsOfRulePO = new TopLawsOfRulePO();
 
@@ -94,7 +95,7 @@ public class StructuredServiceImpl implements StructuredService {
                     text = ruleInfo.getLeft();
                     chapter_text.append(text);
 
-                    ruleStructureResPOS.add(new RuleStructureResPO()
+                    ruleItemStructureResPOS.add(new RuleItemStructureResPO()
                             .setTitle(title)
                             .setChapter(chapter)
                             .setSection(section)
@@ -136,7 +137,7 @@ public class StructuredServiceImpl implements StructuredService {
             article_text.append(ruleChapterStructureResPOS.get(i).getText());
         }
 
-        ruleStructureRepository.saveAll(ruleStructureResPOS);
+        ruleStructureRepository.saveAll(ruleItemStructureResPOS);
         ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
 
         if (!article_text.toString().equals("")) {

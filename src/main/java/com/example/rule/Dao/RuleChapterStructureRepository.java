@@ -1,6 +1,6 @@
 package com.example.rule.Dao;
 
-import com.example.rule.Model.PO.RuleChapterStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

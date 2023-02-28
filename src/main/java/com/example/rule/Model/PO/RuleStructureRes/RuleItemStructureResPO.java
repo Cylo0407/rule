@@ -1,5 +1,6 @@
-package com.example.rule.Model.PO;
+package com.example.rule.Model.PO.RuleStructureRes;
 
+import com.example.rule.Model.Body.MatchesBody;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -7,15 +8,17 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Map;
 
 @Data
 @Entity
 @Accessors(chain = true)
 @DynamicInsert
 @DynamicUpdate
-@Table(name = "rule_structure_by_chapter")
+@Table(name = "rule_structure")
 @NoArgsConstructor
-public class RuleChapterStructureResPO {
+public class RuleItemStructureResPO implements Serializable, RuleStructureResPO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -27,6 +30,15 @@ public class RuleChapterStructureResPO {
     @Column(name = "chapter")
     private String chapter; //内规章名
 
+    @Column(name = "section")
+    private String section; //内规节名
+
     @Column(name = "text")
-    private String text; //内规具体某一章内容
+    private String text; //内规具体某一条例内容
+
+    @Override
+    public MatchesBody toMatchesBody(Map<Integer, Double> sims) {
+        Double similarity = sims.get(this.id);
+        return new MatchesBody(similarity, this.title, this.text, 0);
+    }
 }

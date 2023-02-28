@@ -6,16 +6,24 @@ import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.Body.TermBody;
-import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.IRModel.VSM;
 import com.example.rule.Model.PO.*;
+import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
 import com.example.rule.Model.PO.TopLaws.TopLawsOfInterpretationPO;
 import com.example.rule.Model.PO.TopLaws.TopLawsOfPenaltyCasePO;
 import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Model.VO.TopLaws.TopLawsMatchResVO;
 import com.example.rule.Service.RetrieveService;
+import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ArticleRetrieveStrategy;
+import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ChapterRetrieveStrategy;
+import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ItemRetrieveStrategy;
+import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.RetrieveStrategy;
+import com.example.rule.Util.BodyConversionUtil;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TermProcessingUtil;
 import com.example.rule.Model.IRModel.Algorithm.BM25;
@@ -25,7 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.io.*;
 import java.util.*;
 
 
@@ -52,6 +59,8 @@ public class RetrieveServiceImpl implements RetrieveService {
 
     private IR_Model model;
 
+    private RetrieveStrategy granularityStrategy;
+
     /**
      * 计算每一条法规解释与内规之间的相似度
      *
@@ -60,7 +69,10 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Override
     public Boolean retrieveByTFIDF() {
         this.setModel(new VSM());
-        return this.retrieve("rule");
+        this.setGranularityStrategy(new ItemRetrieveStrategy());
+        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleStructureRepository.findAll();
+        Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleItemStructureResPOS, this.model);
+        return this.retrieve(ruleItemStructureResPOS, tfidfOfRules);
     }
 
     /**
@@ -72,7 +84,10 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Override
     public Boolean retrieveByBM25() {
         this.setModel(new BM25());
-        return this.retrieve("rule");
+        this.setGranularityStrategy(new ItemRetrieveStrategy());
+        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleStructureRepository.findAll();
+        Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleItemStructureResPOS, this.model);
+        return this.retrieve(ruleItemStructureResPOS, tfidfOfRules);
     }
 
     /**
@@ -81,93 +96,49 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Override
     public Boolean retrieveByChapter() {
         this.setModel(new BM25());
-        return this.retrieve("ruleChapter");
+        this.setGranularityStrategy(new ChapterRetrieveStrategy());
+        List<RuleChapterStructureResPO> ruleChapterStructureResPOS = ruleChapterStructureRepository.findAll();
+        Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleChapterStructureResPOS, this.model);
+        return this.retrieve(ruleChapterStructureResPOS, tfidfOfRules);
     }
 
     @Override
     public Boolean retrieveByArticle() {
         this.setModel(new BM25());
-        return this.retrieve("ruleArticle");
+        this.setGranularityStrategy(new ArticleRetrieveStrategy());
+        List<RuleArticleStructureResPO> ruleArticleStructureResPOS = ruleArticleStructureRepository.findAll();
+        Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleArticleStructureResPOS, this.model);
+        return this.retrieve(ruleArticleStructureResPOS, tfidfOfRules);
     }
 
-    //    private List<MatchResVO> retrieve(String granularity) {
-    private Boolean retrieve(String granularity) {
-        // 读取内规库和输入库
-        List<RuleStructureResPO> ruleStructureResPOS = ruleStructureRepository.findAll();
-        List<RuleChapterStructureResPO> ruleChapterStructureResPOS = ruleChapterStructureRepository.findAll();
-        List<RuleArticleStructureResPO> ruleArticleStructureResPOS = ruleArticleStructureRepository.findAll();
+    public RetrieveStrategy getGranularityStrategy() {
+        return granularityStrategy;
+    }
 
+    public void setGranularityStrategy(RetrieveStrategy granularityStrategy) {
+        this.granularityStrategy = granularityStrategy;
+    }
+
+    private Boolean retrieve(List<? extends RuleStructureResPO> ruleStructureResPOS, Map<Integer, List<TermBody>> tfidfOfRules) {
+        // 读取内规库和输入库
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
 
 //        List<MatchResVO> resVOS = new ArrayList<>();
+        // frequencyOfRules: <ruleId,<keyword,frequency>>
+        // tfidfOfRules: <ruleId,<keyword,tfidf>>
 
-        //frequencyOfRules: <ruleId,<keyword,frequency>>
-        Map<Integer, List<TermBody>> frequencyOfRules = null;
-        Map<Integer, List<TermBody>> frequencyOfRulesChapter = null;
-        Map<Integer, List<TermBody>> frequencyOfRulesArticle = null;
-        //tfidfOfRules: <ruleId,<keyword,tfidf>>
-        Map<Integer, List<TermBody>> tfidfOfRules = null;
-        Map<Integer, List<TermBody>> tfidfOfRulesChapter = null;
-        Map<Integer, List<TermBody>> tfidfOfRulesArticle = null;
-        try {
-            // 获取or生成内规的tfidf映射
-            switch (granularity) {
-                case "rule":
-                    frequencyOfRules = TermProcessingUtil.generateTermsFreq(ruleStructureResPOS,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.termsFrequencyCache
-                    );
-                    tfidfOfRules = TermProcessingUtil.generateTermsTFIDF(frequencyOfRules,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.termsTFIDFCache,
-                            this.model
-                    );
-                    break;
-                case "ruleChapter":
-                    frequencyOfRulesChapter = TermProcessingUtil.generateTermsFreq(ruleChapterStructureResPOS,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.chapterTermsFrequencyCache
-                    );
-                    tfidfOfRulesChapter = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesChapter,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.chapterTermsTFIDFCache,
-                            this.model
-                    );
-                    break;
-                case "ruleArticle":
-                    frequencyOfRulesArticle = TermProcessingUtil.generateTermsFreq(ruleArticleStructureResPOS,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.articleTermsFrequencyCache
-                    );
-                    tfidfOfRulesArticle = TermProcessingUtil.generateTermsTFIDF(frequencyOfRulesArticle,
-                            PathConfig.termsInfoCache + File.separator + PathConfig.articleTermsTFIDFCache,
-                            this.model
-                    );
-                    break;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
         for (InterpretationStructureResPO interpretationStructureResPO : interpretationStructureResPOS) {
             MatchResVO matchResVO = new MatchResVO();
             // 1. 对输入进行分词
             List<TermBody> inputTermBodies = TermProcessingUtil.calTermFreq(interpretationStructureResPO.getText());
-            Map<Integer, Double> similarityBetweenInputAndRules = null;
-            List<MatchesBody> matchesBodyList = null;
-            switch (granularity) {
-                case "rule":
-                    // 2. 计算输入中每个词的TF-IDF值
-                    this.model.calTermsWeight(inputTermBodies, tfidfOfRules);
-                    // sims：<ruleId，similarity>
-                    similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
-                    matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
-                    break;
-                case "ruleChapter":
-                    this.model.calTermsWeight(inputTermBodies, tfidfOfRulesChapter);
-                    similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRulesChapter);
-                    matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleChapterStructureResPOS);
-                    break;
-                case "ruleArticle":
-                    this.model.calTermsWeight(inputTermBodies, tfidfOfRulesArticle);
-                    similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRulesArticle);
-                    matchesBodyList = similarityToResult(similarityBetweenInputAndRules, ruleArticleStructureResPOS);
-                    break;
-            }
+
+            // 2. 计算输入中每个词的TF-IDF值
+            this.model.calTermsWeight(inputTermBodies, tfidfOfRules);
+
+            // sims：<ruleId，similarity>
+            Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
+            List<MatchesBody> matchesBodyList = BodyConversionUtil.similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
+
             sortResultBySimilarity(Objects.requireNonNull(matchesBodyList));
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
@@ -179,64 +150,15 @@ public class RetrieveServiceImpl implements RetrieveService {
         return true;
     }
 
-    private List<MatchesBody> similarityToResult(Map<Integer, Double> sims, List<?> resPOS) {
-        List<MatchesBody> res = new ArrayList<>();
-        for (Object po : resPOS) {
-            MatchesBody ruleResMatch = null;
-            if (po instanceof RuleStructureResPO) {
-                ruleResMatch = getMatchesBody(sims, (RuleStructureResPO) po);
-            } else if (po instanceof RuleChapterStructureResPO) {
-                ruleResMatch = getMatchesBody(sims, (RuleChapterStructureResPO) po);
-            } else if (po instanceof RuleArticleStructureResPO) {
-                ruleResMatch = getMatchesBody(sims, (RuleArticleStructureResPO) po);
-            }
-            if (ruleResMatch != null && ruleResMatch.getSimilarity() > 0.01) {
-                res.add(ruleResMatch);
-            }
-        }
-        return res;
-    }
-
-    private MatchesBody getMatchesBody(Map<Integer, Double> sims, RuleStructureResPO po) {
-        Integer id = po.getId();
-        Double similarity = sims.get(id);
-        return new MatchesBody(similarity, po.getTitle(), po.getText(), 0);
-    }
-
-    /**
-     * @param sims 键值对<id,similarity>
-     * @param po   章节
-     * @return 通过键值对找到对应的章节体
-     */
-    private MatchesBody getMatchesBody(Map<Integer, Double> sims, RuleChapterStructureResPO po) {
-        if (po.getText() == null) {
-            return null;
-        }
-        Integer id = po.getId();
-        Double similarity = sims.get(id);
-        return new MatchesBody(similarity, po.getTitle(), po.getChapter() + '\n' + po.getText(), 0);
-    }
-
-    private MatchesBody getMatchesBody(Map<Integer, Double> sims, RuleArticleStructureResPO po) {
-        if (po.getText() == null) {
-            return null;
-        }
-        Integer id = po.getId();
-        Double similarity = sims.get(id);
-        return new MatchesBody(similarity, po.getTitle(), po.getText(), 0);
-    }
-
-    private void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
+    private static void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
         matchesBodyList.sort((o1, o2) -> o2.getSimilarity().compareTo(o1.getSimilarity()));
     }
-
 
     /**
      * 计算具有相同上位法的每一条处罚案例与内规之间的相似度
      *
      * @return resVO: 每一条解释与内规之间的相似度
      */
-
     public List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve() {
         List<TopLawsOfPenaltyCasePO> topLawsOfPenaltyCasePOList = topLawsOfPenaltyCaseRepository.findAll();
         List<TopLawsOfRulePO> topLawsOfRulePOList = topLawsOfRuleRepository.findAll();
@@ -335,10 +257,10 @@ public class RetrieveServiceImpl implements RetrieveService {
         return ruleOfSameTopLaws;
     }
 
-    private List<Triple<Double, Integer, Triple<String, String, String>>> getListBySim2(List<Pair<RuleStructureResPO, Double>> sims) {
-        Collections.sort(sims, new Comparator<Pair<RuleStructureResPO, Double>>() {
+    private List<Triple<Double, Integer, Triple<String, String, String>>> getListBySim2(List<Pair<RuleItemStructureResPO, Double>> sims) {
+        Collections.sort(sims, new Comparator<Pair<RuleItemStructureResPO, Double>>() {
             @Override
-            public int compare(Pair<RuleStructureResPO, Double> o1, Pair<RuleStructureResPO, Double> o2) {
+            public int compare(Pair<RuleItemStructureResPO, Double> o1, Pair<RuleItemStructureResPO, Double> o2) {
                 if (o1.getRight() > o2.getRight()) return -1;
                 else if (o1.getRight() < o2.getRight()) return 1;
                 else return 0;
@@ -347,14 +269,14 @@ public class RetrieveServiceImpl implements RetrieveService {
 
         List<Triple<Double, Integer, Triple<String, String, String>>> res = new ArrayList<>();
         int count = 0;
-        for (Pair<RuleStructureResPO, Double> pair : sims) {
+        for (Pair<RuleItemStructureResPO, Double> pair : sims) {
             if (pair.getRight() > 0) {
-                RuleStructureResPO ruleStructureResPO = pair.getLeft();
-                System.out.println(ruleStructureResPO.getText() + "----" + pair.getRight());
+                RuleItemStructureResPO ruleItemStructureResPO = pair.getLeft();
+                System.out.println(ruleItemStructureResPO.getText() + "----" + pair.getRight());
                 // triple：<similarity,ruleId,ruleContent>
-                String title = ruleStructureResPO.getTitle();
+                String title = ruleItemStructureResPO.getTitle();
                 TopLawsOfRulePO topLawsOfRulePO = topLawsOfRuleRepository.findByTitle(title);
-                res.add(Triple.of(pair.getRight(), ruleStructureResPO.getId(), Triple.of(ruleStructureResPO.getTitle(), topLawsOfRulePO.getLaws(), ruleStructureResPO.getText())));
+                res.add(Triple.of(pair.getRight(), ruleItemStructureResPO.getId(), Triple.of(ruleItemStructureResPO.getTitle(), topLawsOfRulePO.getLaws(), ruleItemStructureResPO.getText())));
                 count++;
                 // 限制输出15条相关内容
                 if (count >= 20) return res;

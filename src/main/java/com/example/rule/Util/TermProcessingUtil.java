@@ -2,9 +2,9 @@ package com.example.rule.Util;
 
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.IRModel.IR_Model;
-import com.example.rule.Model.PO.RuleArticleStructureResPO;
-import com.example.rule.Model.PO.RuleChapterStructureResPO;
-import com.example.rule.Model.PO.RuleStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.seg.Segment;
@@ -197,8 +197,8 @@ public class TermProcessingUtil {
             frequencyOfRules = (Map<Integer, List<TermBody>>) IOUtil.readObject(rulesWordsFrequency);
         } else {
             for (Object resPO : resPOS) {
-                if (resPO instanceof RuleStructureResPO) {
-                    RuleStructureResPO po = (RuleStructureResPO) resPO;
+                if (resPO instanceof RuleItemStructureResPO) {
+                    RuleItemStructureResPO po = (RuleItemStructureResPO) resPO;
                     frequencyOfRules.put(po.getId(), generateTermsFreqBySection(po));
                 } else if (resPO instanceof RuleChapterStructureResPO) {
                     RuleChapterStructureResPO po = (RuleChapterStructureResPO) resPO;
@@ -214,8 +214,8 @@ public class TermProcessingUtil {
         return frequencyOfRules;
     }
 
-    private static List<TermBody> generateTermsFreqBySection(RuleStructureResPO ruleStructureResPO) {
-        return TermProcessingUtil.calTermFreq(ruleStructureResPO.getTitle() + ruleStructureResPO.getText());
+    private static List<TermBody> generateTermsFreqBySection(RuleItemStructureResPO ruleItemStructureResPO) {
+        return TermProcessingUtil.calTermFreq(ruleItemStructureResPO.getTitle() + ruleItemStructureResPO.getText());
     }
 
     //针对章节
