@@ -1,6 +1,8 @@
 package com.example.rule.Model.PO.RuleStructureRes;
 
 import com.example.rule.Model.Body.MatchesBody;
+import com.example.rule.Model.Body.TermBody;
+import com.example.rule.Util.TermProcessingUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -9,6 +11,8 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -37,5 +41,13 @@ public class RuleArticleStructureResPO implements Serializable, RuleStructureRes
         }
         Double similarity = sims.get(this.id);
         return new MatchesBody(similarity, this.title, this.text, 0);
+    }
+
+    @Override
+    public List<TermBody> toTermsFreq() {
+        if (this.getText() == null) {
+            return new ArrayList<>();
+        }
+        return TermProcessingUtil.calTermFreq(this.getTitle() + this.getText());
     }
 }

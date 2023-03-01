@@ -2,7 +2,9 @@ package com.example.rule.Service.Strategy.RetrieveGranularityStrategy;
 
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.IRModel.IR_Model;
+import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
+import com.example.rule.Util.TermProcessingUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -15,4 +17,6 @@ public interface RetrieveStrategy {
      * @return tf-idf Map
      */
     Map<Integer, List<TermBody>> getTFIDFList(List<? extends RuleStructureResPO> ruleStructureResPOS, IR_Model model);
+
+
 }

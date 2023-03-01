@@ -12,6 +12,7 @@ import javafx.util.Pair;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,4 +39,5 @@ public class ItemRetrieveStrategy implements RetrieveStrategy {
 
         return tfidfOfRules;
     }
+
 }
