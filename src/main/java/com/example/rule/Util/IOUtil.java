@@ -125,9 +125,8 @@ public class IOUtil {
     /**
      * 输出json结果文件
      *
-     * @param fileName 外规文件名称
+     * @param fileName   外规文件名称
      * @param matchResVO 匹配结果
-     *
      * @return 目标文件
      */
     public static void createJsonRes(String fileName, MatchResVO matchResVO) {
@@ -138,7 +137,9 @@ public class IOUtil {
             try {
                 file.createNewFile();
                 Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-                String matchData = JSON.toJSONString(matchResVO);
+                List<MatchResVO> matchResVOWrapper = new ArrayList<>();
+                matchResVOWrapper.add(matchResVO);
+                String matchData = JSON.toJSONString(matchResVOWrapper, true);
                 writer.write(matchData);
                 writer.flush();
                 writer.close();

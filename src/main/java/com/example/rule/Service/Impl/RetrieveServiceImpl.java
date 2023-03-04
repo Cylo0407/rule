@@ -111,14 +111,6 @@ public class RetrieveServiceImpl implements RetrieveService {
         return this.retrieve(ruleArticleStructureResPOS, tfidfOfRules);
     }
 
-    public RetrieveStrategy getGranularityStrategy() {
-        return granularityStrategy;
-    }
-
-    public void setGranularityStrategy(RetrieveStrategy granularityStrategy) {
-        this.granularityStrategy = granularityStrategy;
-    }
-
     private Boolean retrieve(List<? extends RuleStructureResPO> ruleStructureResPOS, Map<Integer, List<TermBody>> tfidfOfRules) {
         // 读取内规库和输入库
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
@@ -291,5 +283,13 @@ public class RetrieveServiceImpl implements RetrieveService {
 
     public IR_Model getModel() {
         return model;
+    }
+
+    public RetrieveStrategy getGranularityStrategy() {
+        return granularityStrategy;
+    }
+
+    public void setGranularityStrategy(RetrieveStrategy granularityStrategy) {
+        this.granularityStrategy = granularityStrategy;
     }
 }

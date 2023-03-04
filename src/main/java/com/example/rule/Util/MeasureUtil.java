@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 度量类，从excel中把标注的那一列读出来，组成一个列表
@@ -17,14 +18,31 @@ import java.util.List;
 public class MeasureUtil {
     public static void main(String[] args) {
         try {
-            measure(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.txt"));
+//            measure(new File("F:\\DataSet\\22银行内规项目候选数据集\\候选结果集\\候选结果.txt"));
+            measure(new File("F:\\DataSet\\JsonOutput\\Test\\中国银保监会有关部门负责人就《保险代理人监管规定》答记者问.json"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void measure(File jsonFile) throws IOException {
-        List<MatchResVO> matchResVOList = FileFormatConversionUtil.readJson(jsonFile);
+    /**
+     * 输入一个json文件/文件列表，度量其AP和MAP
+     *
+     * @param file json文件/目录位置
+     * @throws IOException IO异常
+     */
+    public static void measure(File file) throws IOException {
+        List<MatchResVO> matchResVOList = new ArrayList<>();
+        if (file.isDirectory()) {
+            File[] jsonFiles = file.listFiles();
+            for (File f : Objects.requireNonNull(jsonFiles)) {
+                if (file.isFile()) {
+                    matchResVOList.addAll(FileFormatConversionUtil.readJson(f));
+                }
+            }
+        } else {
+            matchResVOList.addAll(FileFormatConversionUtil.readJson(file));
+        }
         List<List<Integer>> queriesTags = new ArrayList<>();
         for (MatchResVO query : matchResVOList) {
             List<Integer> tags = new ArrayList<>();

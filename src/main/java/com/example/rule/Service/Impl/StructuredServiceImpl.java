@@ -241,6 +241,9 @@ public class StructuredServiceImpl implements StructuredService {
 
             File directory = new File(srcDir);
             File[] interpretations = directory.listFiles();
+            if (num == -1) {
+                num = Objects.requireNonNull(interpretations).length;
+            }
             for (int i = 0; i < num; i++) {
                 ArrayList<String> interpretationOfLawsInfo = new ArrayList<>();
                 LineNumberReader linesReader = new LineNumberReader(new FileReader(Objects.requireNonNull(interpretations)[i]));

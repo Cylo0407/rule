@@ -2,9 +2,6 @@ package com.example.rule.Util;
 
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.IRModel.IR_Model;
-import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
-import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
-import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
@@ -75,6 +72,7 @@ public class TermProcessingUtil {
      * 名词的权重更高
      * 通常来说名词的长度越长，证明这个词语越专业化：我们认为长词的词频为2，短词的词频为1
      * 如果该名词是相关法案natk，我们认为其词频为4
+     * TODO 在此优化新的词频策略
      *
      * @param termList 清洗后的分词列表
      * @return 词频列表

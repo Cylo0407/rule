@@ -45,7 +45,7 @@ public class StructuredController {
 
     @PostMapping("/input/Interpretation")
     public boolean interpretationStructureInputs() {
-        structuredService.preDealInterpretationContents(PathConfig.interpretationInputPath, 159);
+        structuredService.preDealInterpretationContents(PathConfig.interpretationInputPath, -1);
         return true;
     }
 
