@@ -30,7 +30,9 @@ public class test {
             MatchResVO matchResVO = readSourceJson(f);
             //3.对结果列表进行标记
             for (MatchResVO mrv : excelList) {
-                if (!matchResVO.getInput_fileName().equals(mrv.getInput_fileName())) continue;
+                String name1 = matchResVO.getInput_fileName().trim();
+                String name2 = mrv.getInput_fileName().trim();
+                if (!name1.equals(name2)) continue;
 
                 System.out.println(mrv.getInput_fileName());
 
@@ -54,7 +56,7 @@ public class test {
         }
     }
 
-    private static MatchResVO readSourceJson(File file) throws Exception {
+    public static MatchResVO readSourceJson(File file) throws Exception {
         FileReader fileReader = new FileReader(file);
         Reader reader = new InputStreamReader(new FileInputStream(file), "Utf-8");
         int ch = 0;
