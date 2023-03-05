@@ -47,7 +47,7 @@ public class FileFormatConversionUtil {
                 Double similarity = ((NumberCell) sheet.getCell(1, i)).getValue();
                 String rule_fileName = sheet.getCell(2, i).getContents();
                 String rule_text = sheet.getCell(3, i).getContents();
-                MatchesBody matchesBody = new MatchesBody(similarity, rule_fileName, rule_text, relevance);
+                MatchesBody matchesBody = new MatchesBody(similarity, null, rule_fileName, rule_text, relevance);
                 matchesBodyList.add(matchesBody);
             }
             MatchResVO matchResVO = new MatchResVO();

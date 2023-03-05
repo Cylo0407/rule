@@ -43,7 +43,7 @@ public class RuleChapterStructureResPO implements Serializable, RuleStructureRes
             return null;
         }
         Double similarity = sims.get(this.id);
-        return new MatchesBody(similarity, this.title, this.chapter + '\n' + this.getText(), 0);
+        return new MatchesBody(similarity, this.id, this.title, this.chapter + '\n' + this.getText(), 0);
     }
 
     @Override
