@@ -11,6 +11,7 @@ import com.alibaba.fastjson.JSON;
 
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,31 +122,37 @@ public class IOUtil {
         return file;
     }
 
+    /**
+     * 返回目标目录，如果该文件不存在则创建该目录
+     *
+     * @param dirPath 目标目录路径
+     * @return 目标文件
+     */
+    public static File getTargetDir(String dirPath) {
+        File file = new File(dirPath);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        return file;
+    }
+
 
     /**
      * 输出json结果文件
      *
      * @param fileName   外规文件名称
      * @param matchResVO 匹配结果
-     * @return 目标文件
      */
-    public static void createJsonRes(String fileName, MatchResVO matchResVO) {
+    public static void createJsonRes(String fileName, MatchResVO matchResVO) throws IOException {
         String filePath = PathConfig.interpretationJsonPath + '/' + fileName + ".json";
         System.out.println(filePath);
-        File file = new File(filePath);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-                List<MatchResVO> matchResVOWrapper = new ArrayList<>();
-                matchResVOWrapper.add(matchResVO);
-                String matchData = JSON.toJSONString(matchResVOWrapper, true);
-                writer.write(matchData);
-                writer.flush();
-                writer.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        File file = IOUtil.getTargetFile(filePath);
+        Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8);
+        List<MatchResVO> matchResVOWrapper = new ArrayList<>();
+        matchResVOWrapper.add(matchResVO);
+        String matchData = JSON.toJSONString(matchResVOWrapper, true);
+        writer.write(matchData);
+        writer.flush();
+        writer.close();
     }
 }

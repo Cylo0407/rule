@@ -40,7 +40,7 @@ public class RuleArticleStructureResPO implements Serializable, RuleStructureRes
             return null;
         }
         Double similarity = sims.get(this.id);
-        return new MatchesBody(similarity, id, this.title, this.text, 0);
+        return new MatchesBody(similarity, this.id, this.title, this.text, 0);
     }
 
     @Override

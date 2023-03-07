@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -115,7 +116,6 @@ public class RetrieveServiceImpl implements RetrieveService {
         // 读取内规库和输入库
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
 
-//        List<MatchResVO> resVOS = new ArrayList<>();
         // frequencyOfRules: <ruleId,<keyword,frequency>>
         // tfidfOfRules: <ruleId,<keyword,tfidf>>
 
@@ -135,10 +135,12 @@ public class RetrieveServiceImpl implements RetrieveService {
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(matchesBodyList);
-            IOUtil.createJsonRes(interpretationStructureResPO.getTitle(), matchResVO);
-//            resVOS.add(matchResVO);
+            try {
+                IOUtil.createJsonRes(interpretationStructureResPO.getTitle(), matchResVO);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
-//        return resVOS;
         return true;
     }
 

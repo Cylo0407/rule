@@ -113,6 +113,7 @@ public class TermProcessingUtil {
 
     /**
      * 是否应当将这个term纳入计算，词性属于名词、动词、词组
+     * 排除长度<2的词基本验证是负优化
      *
      * @param term Term对象
      * @return 是否应当纳入
@@ -124,8 +125,7 @@ public class TermProcessingUtil {
 //                || termPos.equals("vn")
 //                || termPos.equals("phr");
         boolean isTermPos = CoreStopWordDictionary.shouldInclude(term);
-        boolean isTermLen = term.word.length() > 1;
-        return !(isTermPos && isTermLen);
+        return !isTermPos;
     }
 
 

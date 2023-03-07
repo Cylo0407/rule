@@ -42,7 +42,7 @@ public class RuleItemStructureResPO implements Serializable, RuleStructureResPO 
     @Override
     public MatchesBody toMatchesBody(Map<Integer, Double> sims) {
         Double similarity = sims.get(this.id);
-        return new MatchesBody(similarity, id, this.title, this.text, 0);
+        return new MatchesBody(similarity, this.id, this.title, this.text, 0);
     }
 
     @Override
