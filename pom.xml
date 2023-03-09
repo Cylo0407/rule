@@ -107,6 +107,13 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.69</version>
         </dependency>
+
+<!--        三元组 -->
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+        </dependency>
     </dependencies>
 
     <build>
