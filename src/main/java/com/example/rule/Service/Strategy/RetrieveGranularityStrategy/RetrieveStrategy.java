@@ -2,14 +2,15 @@ package com.example.rule.Service.Strategy.RetrieveGranularityStrategy;
 
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.IRModel.IR_Model;
-import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
-import com.example.rule.Util.TermProcessingUtil;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Map;
 
 public interface RetrieveStrategy {
+
+    List<? extends RuleStructureResPO> findAll(JpaRepository jpaRepository);
     /**
      * 获取tf-idf列表
      *

@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public class StructuredServiceImpl implements StructuredService {
 
     @Resource
-    RuleStructureRepository ruleStructureRepository;
+    RuleItemStructureRepository ruleItemStructureRepository;
     @Resource
     RuleChapterStructureRepository ruleChapterStructureRepository;
     @Resource
@@ -137,7 +137,7 @@ public class StructuredServiceImpl implements StructuredService {
             article_text.append(ruleChapterStructureResPOS.get(i).getText());
         }
 
-        ruleStructureRepository.saveAll(ruleItemStructureResPOS);
+        ruleItemStructureRepository.saveAll(ruleItemStructureResPOS);
         ruleChapterStructureRepository.saveAll(ruleChapterStructureResPOS);
 
         if (!article_text.toString().equals("")) {

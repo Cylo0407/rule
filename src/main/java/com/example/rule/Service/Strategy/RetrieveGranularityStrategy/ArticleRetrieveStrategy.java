@@ -4,23 +4,21 @@ import com.example.rule.Dao.RuleArticleStructureRepository;
 import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
-import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
-import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
 import com.example.rule.Util.TermProcessingUtil;
-import javafx.util.Pair;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ArticleRetrieveStrategy implements RetrieveStrategy {
 
-    @Resource
-    RuleArticleStructureRepository ruleArticleStructureRepository;
+    @Override
+    public List<? extends RuleStructureResPO> findAll(JpaRepository ruleArticleStructureRepository) {
+        return ((RuleArticleStructureRepository) ruleArticleStructureRepository).findAll();
+    }
 
     @Override
     public Map<Integer, List<TermBody>> getTFIDFList(List<? extends RuleStructureResPO> ruleArticleStructureResPOS, IR_Model model) {

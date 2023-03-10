@@ -23,17 +23,22 @@ import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ArticleRetr
 import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ChapterRetrieveStrategy;
 import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.ItemRetrieveStrategy;
 import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.RetrieveStrategy;
-import com.example.rule.Util.BodyConversionUtil;
+import com.example.rule.Service.Strategy.TermWeightStrategy.TermWeightStrategy;
+import com.example.rule.Util.ConversionUtil;
 import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TermProcessingUtil;
 import com.example.rule.Model.IRModel.Algorithm.BM25;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 
 
@@ -42,7 +47,7 @@ import java.util.*;
 public class RetrieveServiceImpl implements RetrieveService {
 
     @Resource
-    RuleStructureRepository ruleStructureRepository;
+    RuleItemStructureRepository ruleItemStructureRepository;
     @Resource
     TopLawsOfRuleRepository topLawsOfRuleRepository;
     @Resource
@@ -61,6 +66,7 @@ public class RetrieveServiceImpl implements RetrieveService {
     private IR_Model model;
 
     private RetrieveStrategy granularityStrategy;
+    private TermWeightStrategy termWeightStrategy;
 
     /**
      * 计算每一条法规解释与内规之间的相似度
@@ -71,7 +77,7 @@ public class RetrieveServiceImpl implements RetrieveService {
     public Boolean retrieveByTFIDF() {
         this.setModel(new VSM());
         this.setGranularityStrategy(new ItemRetrieveStrategy());
-        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleStructureRepository.findAll();
+        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleItemStructureRepository.findAll();
         Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleItemStructureResPOS, this.model);
         return this.retrieve(ruleItemStructureResPOS, tfidfOfRules);
     }
@@ -86,7 +92,7 @@ public class RetrieveServiceImpl implements RetrieveService {
     public Boolean retrieveByBM25() {
         this.setModel(new BM25());
         this.setGranularityStrategy(new ItemRetrieveStrategy());
-        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleStructureRepository.findAll();
+        List<RuleItemStructureResPO> ruleItemStructureResPOS = ruleItemStructureRepository.findAll();
         Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleItemStructureResPOS, this.model);
         return this.retrieve(ruleItemStructureResPOS, tfidfOfRules);
     }
@@ -112,6 +118,32 @@ public class RetrieveServiceImpl implements RetrieveService {
         return this.retrieve(ruleArticleStructureResPOS, tfidfOfRules);
     }
 
+    @Override
+    public Boolean doRetrieve(String granularity, int longTermWeight) {
+        this.setModel(new BM25());
+        try {
+            this.setGranularityStrategy((RetrieveStrategy) Class.forName(
+                    "com.example.rule.Service.Strategy.RetrieveGranularityStrategy."
+                            + StringUtils.capitalize(granularity) + "RetrieveStrategy").newInstance()
+            );
+            this.setTermWeightStrategy((TermWeightStrategy) Class.forName(
+                    "com.example.rule.Service.Strategy.TermWeightStrategy.TermWeight"
+                            + longTermWeight + "Strategy").newInstance()
+            );
+            Field repositoryField = this.getClass().getDeclaredField("rule" + StringUtils.capitalize(granularity) + "StructureRepository");
+            Object repo = repositoryField.get(this);
+            JpaRepository<? extends RuleStructureResPO, Integer> repository = this.ruleItemStructureRepository;
+            if (repo instanceof JpaRepository) {
+                repository = (JpaRepository<? extends RuleStructureResPO, Integer>) repo;
+            }
+            List<? extends RuleStructureResPO> ruleStructureResPOS = this.granularityStrategy.findAll(repository);
+            Map<Integer, List<TermBody>> tfidfOfRules = this.granularityStrategy.getTFIDFList(ruleStructureResPOS, this.model);
+            return this.retrieve(ruleStructureResPOS, tfidfOfRules);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Boolean retrieve(List<? extends RuleStructureResPO> ruleStructureResPOS, Map<Integer, List<TermBody>> tfidfOfRules) {
         // 读取内规库和输入库
         List<InterpretationStructureResPO> interpretationStructureResPOS = interpretationStructureRepository.findAll();
@@ -129,7 +161,7 @@ public class RetrieveServiceImpl implements RetrieveService {
 
             // sims：<ruleId，similarity>
             Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
-            List<MatchesBody> matchesBodyList = BodyConversionUtil.similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
+            List<MatchesBody> matchesBodyList = ConversionUtil.similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
 
             sortResultBySimilarity(Objects.requireNonNull(matchesBodyList));
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
@@ -293,5 +325,13 @@ public class RetrieveServiceImpl implements RetrieveService {
 
     public void setGranularityStrategy(RetrieveStrategy granularityStrategy) {
         this.granularityStrategy = granularityStrategy;
+    }
+
+    public TermWeightStrategy getTermWeightStrategy() {
+        return termWeightStrategy;
+    }
+
+    public void setTermWeightStrategy(TermWeightStrategy termWeightStrategy) {
+        this.termWeightStrategy = termWeightStrategy;
     }
 }

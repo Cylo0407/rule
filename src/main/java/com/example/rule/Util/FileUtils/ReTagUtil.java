@@ -37,8 +37,6 @@ public class ReTagUtil {
                     continue;
                 }
 
-                System.out.println(mrv.getInput_fileName());
-
                 //3.1 将相关内规文本保存到一个单独的列表中
                 List<String> relevanceRules = new ArrayList<>();
                 for (MatchesBody mb : mrv.getRuleMatchRes()) {
@@ -53,15 +51,19 @@ public class ReTagUtil {
 //                        mb.setRelevance(1);
 //                    }
 //                }
+                int reTagNum = 0;
                 for (String text : relevanceRules) {
                     for (MatchesBody mb : matchResVO.getRuleMatchRes()) {
                         if (mb.getRelevance() != 1) {
                             if (mb.getRule_text().contains(text)) {
                                 mb.setRelevance(1);
+                                reTagNum++;
                             }
                         }
                     }
                 }
+                System.out.println(matchResVO.getInput_fileName() + " 中包含" + matchResVO.getRuleMatchRes().size() +
+                        "条返回结果和" + reTagNum + "条相关结果");
             }
             //4.将标记完的结果列表输出成新的json文件
             String fileName = PathConfig.getFileMainName(f.getName());

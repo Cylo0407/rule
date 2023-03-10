@@ -4,6 +4,7 @@ import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Util.FileUtils.FileFormatConversionUtil;
+import com.example.rule.Util.FileUtils.ReGenerateUtil;
 import com.example.rule.Util.FileUtils.ReTagUtil;
 
 import java.io.File;
@@ -19,10 +20,15 @@ import java.util.Objects;
  */
 public class MeasureUtil {
     public static void main(String[] args) {
+        measureProcess();
+    }
+
+    public static void measureProcess() {
         try {
 //            measure(new File("F:\\DataSet\\22银行内规项目候选数据集\\候选结果集\\候选结果.txt"));
-            ReTagUtil.reTag(PathConfig.interpretationJsonPath, PathConfig.excelPath);
-            measure(IOUtil.getTargetDir(PathConfig.interpretationJsonPath));
+            ReTagUtil.reTag(PathConfig.interpretationJsonPath + 1, PathConfig.excelPath);
+            measure(IOUtil.getTargetDir(PathConfig.interpretationJsonPath + 1));
+            IOUtil.clearTermsInfoCache();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -53,18 +59,9 @@ public class MeasureUtil {
                 tags.add(document.getRelevance());
             }
             System.out.println(query.getInput_fileName());
-            System.out.println("AP 100%: " + getAP(tags));
-            System.out.println("AP 50%: " + getAP(tags, 0.5));
-            System.out.println("AP 20%: " + getAP(tags, 0.2));
-            System.out.println("AP 5%: " + getAP(tags, 0.05));
-            System.out.println("AP 1%: " + getAP(tags, 0.01));
+            System.out.println("AP: " + getAP(tags));
             queriesTags.add(tags);
         }
-//        System.out.println("MAP 100%: " + getMAP(queriesTags));
-//        System.out.println("MAP 50%: " + getMAP(queriesTags, 0.5));
-//        System.out.println("MAP 20%: " + getMAP(queriesTags, 0.2));
-//        System.out.println("MAP 5%: " + getMAP(queriesTags, 0.05));
-//        System.out.println("MAP 1%: " + getMAP(queriesTags, 0.01));
     }
 
 
@@ -88,7 +85,7 @@ public class MeasureUtil {
                 sumOfPrecisions += correctSoFar / (double) currentTags;
             }
         }
-        double AP = sumOfPrecisions / Math.round(tags.size() * prop);
+        double AP = sumOfPrecisions / (correctSoFar + 1);
         return AP;
     }
 

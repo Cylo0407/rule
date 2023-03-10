@@ -15,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class IOUtil {
+
     public static Object readObject(File file) throws IOException, ClassNotFoundException {
         ObjectInputStream objectInputStream = new ObjectInputStream(Files.newInputStream(file.toPath()));
         Object object = objectInputStream.readObject();
@@ -112,6 +114,10 @@ public class IOUtil {
      */
     public static File getTargetFile(String filePath) {
         File file = new File(filePath);
+        File dir = file.getParentFile();
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -144,9 +150,10 @@ public class IOUtil {
      * @param matchResVO 匹配结果
      */
     public static void createJsonRes(String fileName, MatchResVO matchResVO) throws IOException {
-        String filePath = PathConfig.interpretationJsonPath + '/' + fileName + ".json";
-        System.out.println(filePath);
+        String filePath = PathConfig.interpretationJsonPath + PathConfig.testCount + File.separator + fileName + ".json";
         File file = IOUtil.getTargetFile(filePath);
+//        PathConfig.testCount++;
+
         Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8);
         List<MatchResVO> matchResVOWrapper = new ArrayList<>();
         matchResVOWrapper.add(matchResVO);
@@ -154,5 +161,13 @@ public class IOUtil {
         writer.write(matchData);
         writer.flush();
         writer.close();
+    }
+
+    public static void clearTermsInfoCache() {
+        File termsInfoCacheDir = new File(PathConfig.termsInfoCache);
+        File[] termsInfoCaches = termsInfoCacheDir.listFiles();
+        for (File cache : Objects.requireNonNull(termsInfoCaches)) {
+            cache.delete();
+        }
     }
 }

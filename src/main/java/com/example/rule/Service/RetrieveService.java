@@ -14,6 +14,8 @@ public interface RetrieveService {
 
     Boolean retrieveByArticle();
 
+    Boolean doRetrieve(String granularity, int longTermWeight);
+
     List<TopLawsMatchResVO> penaltyCaseTopLawsRetrieve();
 
     List<TopLawsMatchResVO> interpretationTopLawsRetrieve();

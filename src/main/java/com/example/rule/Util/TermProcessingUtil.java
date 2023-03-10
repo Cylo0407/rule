@@ -56,44 +56,50 @@ public class TermProcessingUtil {
 
 
     /**
-     * 计算文本的词频
+     * 计算文本的词频，默认的长词词频为3
      *
      * @param context 文本内容
      * @return 词频映射表
      */
     public static List<TermBody> calTermFreq(String context) {
+        return TermProcessingUtil.calTermFreq(context, 3);
+    }
+
+
+    public static List<TermBody> calTermFreq(String context, int longTermWeight) {
         List<Term> cleansedTermList = TermProcessingUtil.preprocessContextToTermList(context);
         // 计算每个词的词频
-        return TermProcessingUtil.countTerms(cleansedTermList);
+        return TermProcessingUtil.countTerms(cleansedTermList, longTermWeight);
     }
 
     /**
      * 计算词频：计算每一个term出现的次数
      * 名词的权重更高
-     * 通常来说名词的长度越长，证明这个词语越专业化：我们认为长词的词频为2，短词的词频为1
+     * 通常来说名词的长度越长，证明这个词语越专业化：我们认为长词的词频为3，短词的词频为1
      * 如果该名词是相关法案natk，我们认为其词频为4
      * TODO 在此优化新的词频策略
      *
-     * @param termList 清洗后的分词列表
+     * @param termList       清洗后的分词列表
+     * @param longTermWeight 长词的权重
      * @return 词频列表
      */
-    private static List<TermBody> countTerms(List<Term> termList) {
+    private static List<TermBody> countTerms(List<Term> termList, int longTermWeight) {
         Map<String, TermBody> termsFrequency = new HashMap<>();
         for (Term t : termList) {
             TermBody tFreq = termsFrequency.getOrDefault(t.word, new TermBody(t));
             if (tFreq.getWord().length() > 2) {
-                tFreq.setFreq(tFreq.getFreq() + 2);
+                tFreq.setFreq(tFreq.getFreq() + longTermWeight);
             } else {
                 tFreq.setFreq(tFreq.getFreq() + 1);
             }
             termsFrequency.put(t.word, tFreq);
         }
         ArrayList<TermBody> termBodyList = new ArrayList<>(termsFrequency.values());
-        for (TermBody tq : termBodyList) {
-            if (tq.getNature().equals("natk")) {
-                tq.setFreq(tq.getFreq() + 3);
-            }
-        }
+//        for (TermBody tq : termBodyList) {
+//            if (tq.getNature().equals("natk")) {
+//                tq.setFreq(tq.getFreq() + 3);
+//            }
+//        }
         termBodyList.sort(Comparator.comparingInt(o -> -o.getFreq()));
         return termBodyList;
     }

@@ -5,21 +5,22 @@ import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
-import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
 import com.example.rule.Util.TermProcessingUtil;
-import javafx.util.Pair;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import javax.annotation.Resource;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ChapterRetrieveStrategy implements RetrieveStrategy {
-    @Resource
-    RuleChapterStructureRepository ruleChapterStructureRepository;
+
+    @Override
+    public List<? extends RuleStructureResPO> findAll(JpaRepository ruleChapterStructureRepository) {
+        return ((RuleChapterStructureRepository) ruleChapterStructureRepository).findAll();
+    }
 
     @Override
     public Map<Integer, List<TermBody>> getTFIDFList(List<? extends RuleStructureResPO> ruleChapterStructureResPOS, IR_Model model) {
