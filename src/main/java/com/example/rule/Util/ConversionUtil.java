@@ -16,4 +16,12 @@ public class ConversionUtil {
         }
         return res;
     }
+
+    public static List<Integer> matchBodies2TagsOrder(List<MatchesBody> matchesBodies){
+        List<Integer> tagsOrder = new ArrayList<>();
+        for (MatchesBody document : matchesBodies) {
+            tagsOrder.add(document.getRelevance());
+        }
+        return tagsOrder;
+    }
 }

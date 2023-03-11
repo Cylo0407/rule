@@ -45,23 +45,29 @@ public class ReTagUtil {
                     }
                 }
 
-                //3.2 遍历结果列表，如果其中结果文本在relevanceRules列表中，则记为相关
+//                3.2 遍历结果列表，如果其中结果文本在relevanceRules列表中，则记为相关
 //                for (MatchesBody mb : matchResVO.getRuleMatchRes()) {
 //                    if (relevanceRules.contains(mb.getRule_text())) {
 //                        mb.setRelevance(1);
 //                    }
 //                }
-                int reTagNum = 0;
                 for (String text : relevanceRules) {
                     for (MatchesBody mb : matchResVO.getRuleMatchRes()) {
                         if (mb.getRelevance() != 1) {
                             if (mb.getRule_text().contains(text)) {
                                 mb.setRelevance(1);
-                                reTagNum++;
                             }
                         }
                     }
                 }
+
+                int reTagNum = 0;
+                for (MatchesBody mb : matchResVO.getRuleMatchRes()) {
+                    if (mb.getRelevance() == 1) {
+                        reTagNum++;
+                    }
+                }
+
                 System.out.println(matchResVO.getInput_fileName() + " 中包含" + matchResVO.getRuleMatchRes().size() +
                         "条返回结果和" + reTagNum + "条相关结果");
             }

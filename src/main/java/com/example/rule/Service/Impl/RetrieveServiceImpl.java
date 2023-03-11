@@ -6,6 +6,7 @@ import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
 import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.Body.TermBody;
+import com.example.rule.Model.Config.NumberConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.IRModel.VSM;
 import com.example.rule.Model.PO.*;
@@ -26,6 +27,7 @@ import com.example.rule.Service.Strategy.RetrieveGranularityStrategy.RetrieveStr
 import com.example.rule.Service.Strategy.TermWeightStrategy.TermWeightStrategy;
 import com.example.rule.Util.ConversionUtil;
 import com.example.rule.Util.IOUtil;
+import com.example.rule.Util.MeasureUtil;
 import com.example.rule.Util.TermProcessingUtil;
 import com.example.rule.Model.IRModel.Algorithm.BM25;
 import org.apache.commons.lang3.StringUtils;
@@ -36,7 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -121,6 +122,7 @@ public class RetrieveServiceImpl implements RetrieveService {
     @Override
     public Boolean doRetrieve(String granularity, int longTermWeight) {
         this.setModel(new BM25());
+        NumberConfig.longTermWeight = longTermWeight;
         try {
             this.setGranularityStrategy((RetrieveStrategy) Class.forName(
                     "com.example.rule.Service.Strategy.RetrieveGranularityStrategy."
@@ -163,7 +165,7 @@ public class RetrieveServiceImpl implements RetrieveService {
             Map<Integer, Double> similarityBetweenInputAndRules = TermProcessingUtil.calSimilarity(inputTermBodies, tfidfOfRules);
             List<MatchesBody> matchesBodyList = ConversionUtil.similarityToResult(similarityBetweenInputAndRules, ruleStructureResPOS);
 
-            sortResultBySimilarity(Objects.requireNonNull(matchesBodyList));
+            MeasureUtil.sortResultBySimilarity(Objects.requireNonNull(matchesBodyList));
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(matchesBodyList);
@@ -174,10 +176,6 @@ public class RetrieveServiceImpl implements RetrieveService {
             }
         }
         return true;
-    }
-
-    private static void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
-        matchesBodyList.sort((o1, o2) -> o2.getSimilarity().compareTo(o1.getSimilarity()));
     }
 
     /**

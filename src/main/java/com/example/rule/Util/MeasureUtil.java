@@ -4,7 +4,6 @@ import com.example.rule.Model.Body.MatchesBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.VO.MatchResVO;
 import com.example.rule.Util.FileUtils.FileFormatConversionUtil;
-import com.example.rule.Util.FileUtils.ReGenerateUtil;
 import com.example.rule.Util.FileUtils.ReTagUtil;
 
 import java.io.File;
@@ -25,10 +24,10 @@ public class MeasureUtil {
 
     public static void measureProcess() {
         try {
-//            measure(new File("F:\\DataSet\\22银行内规项目候选数据集\\候选结果集\\候选结果.txt"));
-            ReTagUtil.reTag(PathConfig.interpretationJsonPath + 1, PathConfig.excelPath);
-            measure(IOUtil.getTargetDir(PathConfig.interpretationJsonPath + 1));
-            IOUtil.clearTermsInfoCache();
+            measure(new File("F:\\DataSet\\22银行内规项目候选数据集\\候选结果集\\候选结果.txt"));
+//            ReTagUtil.reTag(PathConfig.interpretationJsonPath + 1, PathConfig.excelPath);
+//            measure(IOUtil.getTargetDir(PathConfig.interpretationJsonPath + 1));
+//            IOUtil.clearTermsInfoCache();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -42,6 +41,7 @@ public class MeasureUtil {
      */
     public static void measure(File file) throws IOException {
         List<MatchResVO> matchResVOList = new ArrayList<>();
+        // 循环读json文件为matchResVOList
         if (file.isDirectory()) {
             File[] jsonFiles = file.listFiles();
             for (File f : Objects.requireNonNull(jsonFiles)) {
@@ -52,16 +52,25 @@ public class MeasureUtil {
         } else {
             matchResVOList.addAll(FileFormatConversionUtil.readJson(file));
         }
+        System.out.println("AP: " + getAP(getTagsOrder(matchResVOList)));
+        System.out.println("MAP: " + getMAP(getQueriesTagsOrder(matchResVOList)));
+    }
+
+    private static List<Integer> getTagsOrder(List<MatchResVO> matchResVOList) {
+        List<MatchesBody> matchesBodies = new ArrayList<>();
+        for (MatchResVO query : matchResVOList) {
+            matchesBodies.addAll(query.getRuleMatchRes());
+        }
+        MeasureUtil.sortResultBySimilarity(matchesBodies);
+        return ConversionUtil.matchBodies2TagsOrder(matchesBodies);
+    }
+
+    private static List<List<Integer>> getQueriesTagsOrder(List<MatchResVO> matchResVOList) {
         List<List<Integer>> queriesTags = new ArrayList<>();
         for (MatchResVO query : matchResVOList) {
-            List<Integer> tags = new ArrayList<>();
-            for (MatchesBody document : query.getRuleMatchRes()) {
-                tags.add(document.getRelevance());
-            }
-            System.out.println(query.getInput_fileName());
-            System.out.println("AP: " + getAP(tags));
-            queriesTags.add(tags);
+            queriesTags.add(ConversionUtil.matchBodies2TagsOrder(query.getRuleMatchRes()));
         }
+        return queriesTags;
     }
 
 
@@ -85,7 +94,7 @@ public class MeasureUtil {
                 sumOfPrecisions += correctSoFar / (double) currentTags;
             }
         }
-        double AP = sumOfPrecisions / (correctSoFar + 1);
+        double AP = correctSoFar == 0 ? 0 : sumOfPrecisions / (correctSoFar);
         return AP;
     }
 
@@ -108,5 +117,9 @@ public class MeasureUtil {
         }
         double MAP = sumOfAP / (double) (queriesTags.size() - zeros);
         return MAP;
+    }
+
+    public static void sortResultBySimilarity(List<MatchesBody> matchesBodyList) {
+        matchesBodyList.sort((o1, o2) -> o2.getSimilarity().compareTo(o1.getSimilarity()));
     }
 }

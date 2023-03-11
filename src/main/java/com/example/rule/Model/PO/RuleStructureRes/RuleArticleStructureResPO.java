@@ -43,6 +43,7 @@ public class RuleArticleStructureResPO implements Serializable, RuleStructureRes
         return new MatchesBody(similarity, this.id, this.title, this.text, 0);
     }
 
+
     @Override
     public List<TermBody> toTermsFreq() {
         if (this.getText() == null) {

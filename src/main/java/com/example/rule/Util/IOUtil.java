@@ -1,5 +1,6 @@
 package com.example.rule.Util;
 
+import com.example.rule.Model.Config.NumberConfig;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.VO.MatchResVO;
 import org.apache.poi.POIXMLDocument;
@@ -150,7 +151,7 @@ public class IOUtil {
      * @param matchResVO 匹配结果
      */
     public static void createJsonRes(String fileName, MatchResVO matchResVO) throws IOException {
-        String filePath = PathConfig.interpretationJsonPath + PathConfig.testCount + File.separator + fileName + ".json";
+        String filePath = PathConfig.interpretationJsonPath + NumberConfig.testCount + File.separator + fileName + ".json";
         File file = IOUtil.getTargetFile(filePath);
 //        PathConfig.testCount++;
 

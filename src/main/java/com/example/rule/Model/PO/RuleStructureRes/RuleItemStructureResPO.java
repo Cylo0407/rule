@@ -45,6 +45,7 @@ public class RuleItemStructureResPO implements Serializable, RuleStructureResPO 
         return new MatchesBody(similarity, this.id, this.title, this.text, 0);
     }
 
+
     @Override
     public List<TermBody> toTermsFreq() {
         return TermProcessingUtil.calTermFreq(this.getTitle() + this.getText());
