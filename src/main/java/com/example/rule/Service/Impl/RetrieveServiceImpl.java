@@ -169,11 +169,8 @@ public class RetrieveServiceImpl implements RetrieveService {
             matchResVO.setInput_fileName(interpretationStructureResPO.getTitle());
             matchResVO.setInput_text(interpretationStructureResPO.getText());
             matchResVO.setRuleMatchRes(matchesBodyList);
-            try {
-                IOUtil.createJsonRes(interpretationStructureResPO.getTitle(), matchResVO);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+
+            this.granularityStrategy.outputJson(interpretationStructureResPO.getTitle(), matchResVO);
         }
         return true;
     }

@@ -1,6 +1,5 @@
 package com.example.rule.Util;
 
-import com.example.rule.Model.Config.NumberConfig;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.VO.MatchResVO;
 import org.apache.poi.POIXMLDocument;
@@ -129,33 +128,19 @@ public class IOUtil {
         return file;
     }
 
-    /**
-     * 返回目标目录，如果该文件不存在则创建该目录
-     *
-     * @param dirPath 目标目录路径
-     * @return 目标文件
-     */
-    public static File getTargetDir(String dirPath) {
-        File file = new File(dirPath);
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-        return file;
-    }
 
+    public static void recreateJsonRes(File jsonFile, MatchResVO matchResVO) throws IOException {
+        IOUtil.createJsonRes(jsonFile, matchResVO);
+    }
 
     /**
      * 输出json结果文件
      *
-     * @param fileName   外规文件名称
-     * @param matchResVO 匹配结果
+     * @param outputJsonFile 输出的json文件
+     * @param matchResVO     匹配结果
      */
-    public static void createJsonRes(String fileName, MatchResVO matchResVO) throws IOException {
-        String filePath = PathConfig.interpretationJsonPath + NumberConfig.testCount + File.separator + fileName + ".json";
-        File file = IOUtil.getTargetFile(filePath);
-//        PathConfig.testCount++;
-
-        Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8);
+    public static void createJsonRes(File outputJsonFile, MatchResVO matchResVO) throws IOException {
+        Writer writer = new OutputStreamWriter(Files.newOutputStream(outputJsonFile.toPath()), StandardCharsets.UTF_8);
         List<MatchResVO> matchResVOWrapper = new ArrayList<>();
         matchResVOWrapper.add(matchResVO);
         String matchData = JSON.toJSONString(matchResVOWrapper, true);

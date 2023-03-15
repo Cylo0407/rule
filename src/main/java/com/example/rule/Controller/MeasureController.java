@@ -2,6 +2,7 @@ package com.example.rule.Controller;
 
 import com.example.rule.Service.MeasureService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,9 +15,9 @@ public class MeasureController {
     @Resource
     MeasureService measureService;
 
-    @GetMapping()
-    public void doMeasure() {
-        measureService.doMeasure();
+    @GetMapping("/do/{granularity}")
+    public void doMeasure(@PathVariable String granularity) {
+        measureService.doMeasure(granularity);
     }
 
     @GetMapping("/reGenerateItem")

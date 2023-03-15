@@ -115,25 +115,25 @@ public class StructuredServiceImpl implements StructuredService {
         StringBuilder article_text = new StringBuilder();
         for (int i = 0; i < ruleChapterStructureResPOS.size() - 1; i++) {
             RuleChapterStructureResPO po = ruleChapterStructureResPOS.get(i);
-            chapter = po.getChapter();
-            if (i == 0) {
-                continue;
-            } else if (i == 1) {
-                // 如果是第二章
-                if (chapter.contains("组织") || chapter.contains("职责") || chapter.contains("规定")) {
-                    continue;
-                }
-            } else if (i == 2) {
-                // 如果是第三章
-                if (chapter.contains("内容") || chapter.contains("要求") || chapter.contains("规定") || chapter.contains("对象") || chapter.contains("条件")) {
-                    continue;
-                }
-            } else if (i == ruleChapterStructureResPOS.size() - 2) {
-                // 如果是倒数第二章
-                if (chapter.contains("罚则") || chapter.contains("操作") || chapter.contains("责任") || chapter.contains("管理") || chapter.contains("其他") || chapter.contains("要求")) {
-                    continue;
-                }
-            }
+//            chapter = po.getChapter();
+//            if (i == 0) {
+//                continue;
+//            } else if (i == 1) {
+//                // 如果是第二章
+//                if (chapter.contains("组织") || chapter.contains("职责") || chapter.contains("规定")) {
+//                    continue;
+//                }
+//            } else if (i == 2) {
+//                // 如果是第三章
+//                if (chapter.contains("内容") || chapter.contains("要求") || chapter.contains("规定") || chapter.contains("对象") || chapter.contains("条件")) {
+//                    continue;
+//                }
+//            } else if (i == ruleChapterStructureResPOS.size() - 2) {
+//                // 如果是倒数第二章
+//                if (chapter.contains("罚则") || chapter.contains("操作") || chapter.contains("责任") || chapter.contains("管理") || chapter.contains("其他") || chapter.contains("要求")) {
+//                    continue;
+//                }
+//            }
             article_text.append(ruleChapterStructureResPOS.get(i).getText());
         }
 

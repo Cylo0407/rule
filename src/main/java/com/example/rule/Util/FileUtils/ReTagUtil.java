@@ -72,8 +72,7 @@ public class ReTagUtil {
                         "条返回结果和" + reTagNum + "条相关结果");
             }
             //4.将标记完的结果列表输出成新的json文件
-            String fileName = PathConfig.getFileMainName(f.getName());
-            IOUtil.createJsonRes(fileName, matchResVO);
+            IOUtil.recreateJsonRes(f, matchResVO);
         }
     }
 

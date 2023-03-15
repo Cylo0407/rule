@@ -15,11 +15,11 @@ import javax.transaction.Transactional;
 @Transactional
 public class MeasureServiceImpl implements MeasureService {
     @Override
-    public void doMeasure() {
+    public void doMeasure(String granularity) {
         try {
             // 拿到上一个生成json的文件夹并重新标记
-            ReTagUtil.reTag(PathConfig.interpretationJsonPath + (NumberConfig.testCount), PathConfig.excelPath);
-            MeasureUtil.measure(IOUtil.getTargetFile(PathConfig.interpretationJsonPath + (NumberConfig.testCount)));
+            ReTagUtil.reTag(PathConfig.interpretationJsonPath + granularity, PathConfig.excelPath);
+            MeasureUtil.measure(IOUtil.getTargetFile(PathConfig.interpretationJsonPath + granularity));
             IOUtil.clearTermsInfoCache();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -31,10 +31,10 @@ public class MeasureServiceImpl implements MeasureService {
         try {
             // 对前两次执行的结果进行相似度重算
             ReGenerateUtil.regenerateSimilarity(
-                    PathConfig.interpretationJsonPath + (NumberConfig.testCount - 1),
-                    PathConfig.interpretationJsonPath + (NumberConfig.testCount - 2)
+                    PathConfig.interpretationJsonPath + "Item",
+                    PathConfig.interpretationJsonPath + "Chapter"
             );
-            doMeasure();
+            doMeasure("Item");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

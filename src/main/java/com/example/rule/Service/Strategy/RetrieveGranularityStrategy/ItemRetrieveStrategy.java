@@ -5,6 +5,8 @@ import com.example.rule.Model.Body.TermBody;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.IRModel.IR_Model;
 import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
+import com.example.rule.Model.VO.MatchResVO;
+import com.example.rule.Util.IOUtil;
 import com.example.rule.Util.TermProcessingUtil;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -38,6 +40,15 @@ public class ItemRetrieveStrategy implements RetrieveStrategy {
         }
 
         return tfidfOfRules;
+    }
+
+    @Override
+    public void outputJson(String fileName, MatchResVO matchResVO) {
+        try {
+            IOUtil.createJsonRes(IOUtil.getTargetFile(PathConfig.interpretationJsonPath + "Item" + File.separator + fileName + ".json"), matchResVO);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

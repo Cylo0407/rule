@@ -76,7 +76,7 @@ public class TermProcessingUtil {
      * 如果该名词是相关法案natk，我们认为其词频为4
      * TODO 在此优化新的词频策略
      *
-     * @param termList       清洗后的分词列表
+     * @param termList 清洗后的分词列表
      * @return 词频列表
      */
     private static List<TermBody> countTerms(List<Term> termList) {
@@ -91,9 +91,15 @@ public class TermProcessingUtil {
             termsFrequency.put(t.word, tFreq);
         }
         ArrayList<TermBody> termBodyList = new ArrayList<>(termsFrequency.values());
+//         计算一条内规的总词数
+//        int termsNum = 0;
+//        for (TermBody termBody : termBodyList) {
+//            termsNum += termBody.getFreq();
+//        }
 //        for (TermBody tq : termBodyList) {
 //            if (tq.getNature().equals("natk")) {
-//                tq.setFreq(tq.getFreq() + 3);
+//                tq.setFreq(tq.getFreq() + (int) Math.round(termsNum * 0.01));
+//                tq.setFreq(tq.getFreq() + 10);
 //            }
 //        }
         termBodyList.sort(Comparator.comparingInt(o -> -o.getFreq()));
@@ -180,7 +186,7 @@ public class TermProcessingUtil {
      *
      * @param inputTermsBodies 外部输入的词频列表
      * @param rulesTermsBodies 内规库中每个内规的词频对象映射
-     * term-TFIDF映射
+     *                         term-TFIDF映射
      */
     public static void calTFIDF(List<TermBody> inputTermsBodies, Map<Integer, List<TermBody>> rulesTermsBodies) {
         TermProcessingUtil.calTF(inputTermsBodies);
@@ -193,8 +199,7 @@ public class TermProcessingUtil {
     }
 
     /**
-     *
-     * @param resPOS 内规实体列表
+     * @param resPOS   内规实体列表
      * @param pathName 缓存地址
      * @return 词频实体映射
      */
@@ -216,9 +221,10 @@ public class TermProcessingUtil {
 
     /**
      * 生成所有内规的tf-idf
+     *
      * @param frequencyOfRules 所有内规的词频列表Map
-     * @param pathName 缓存地址
-     * @param model 计算模型
+     * @param pathName         缓存地址
+     * @param model            计算模型
      */
     public static Map<Integer, List<TermBody>> generateTermsTFIDF(Map<Integer, List<TermBody>> frequencyOfRules, String pathName, IR_Model model) throws IOException, ClassNotFoundException {
         Map<Integer, List<TermBody>> tfidfOfRules;

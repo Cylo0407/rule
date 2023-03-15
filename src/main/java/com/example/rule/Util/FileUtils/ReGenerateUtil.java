@@ -14,10 +14,6 @@ import java.util.regex.Pattern;
 public class ReGenerateUtil {
     //获取按章和按条的json结果；
     //取条结果和相应章节结果相似度进行一定运算。
-    public static void main(String[] args) throws Exception {
-        regenerateSimilarity(PathConfig.interpretationJsonPath, PathConfig.interpretationJsonPath + "2");
-    }
-
     public static void regenerateSimilarity(String jsonItemDirPath, String jsonChapterDirPath) throws Exception {
         //TODO 路径还需要修改，按章结果和按条结果需要分开存
         File jsonItemDir = new File(jsonItemDirPath);
@@ -49,7 +45,7 @@ public class ReGenerateUtil {
             for (MatchesBody mb : ruleMatchResVO.getRuleMatchRes()) {
                 for (Triplet<String, Double, Integer> triplet : chapterTexts) {
                     if (triplet.getValue0().contains(mb.getRule_text())) {
-                        Double var = algorithm2(triplet.getValue2(), triplet.getValue1(), mb.getSimilarity());
+                        Double var = algorithm1(triplet.getValue2(), triplet.getValue1(), mb.getSimilarity());
 //                    Double var = algorithm2(triplet.getValue2(), triplet.getValue1(), mb.getSimilarity());
                         mb.setSimilarity(var);
                         break;
@@ -65,8 +61,7 @@ public class ReGenerateUtil {
             matchResVO.setRuleMatchRes(res);
 
             //4.将标记完的结果列表输出成新的json文件
-            String fileName = PathConfig.getFileMainName(itemFiles[i].getName());
-            IOUtil.createJsonRes(fileName, matchResVO);
+            IOUtil.recreateJsonRes(itemFiles[i], matchResVO);
         }
     }
 

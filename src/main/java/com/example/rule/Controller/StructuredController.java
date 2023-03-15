@@ -51,7 +51,7 @@ public class StructuredController {
 
     @PostMapping("/input/SourceDoc")
     public boolean sourceDocStructureInputs() {
-        structuredService.preDealInterpretationContents(PathConfig.sourceDocInputPath, 36);
+        structuredService.preDealInterpretationContents(PathConfig.sourceDocInputPath, -1);
         return true;
     }
 

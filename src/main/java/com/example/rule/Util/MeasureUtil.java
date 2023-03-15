@@ -26,7 +26,7 @@ public class MeasureUtil {
         try {
             measure(new File("F:\\DataSet\\22银行内规项目候选数据集\\候选结果集\\候选结果.txt"));
 //            ReTagUtil.reTag(PathConfig.interpretationJsonPath + 1, PathConfig.excelPath);
-//            measure(IOUtil.getTargetDir(PathConfig.interpretationJsonPath + 1));
+//            measure(IOUtil.getTargetDir("F:\\DataSet\\JsonOutput\\TestOriginChapter"));
 //            IOUtil.clearTermsInfoCache();
         } catch (Exception e) {
             throw new RuntimeException(e);

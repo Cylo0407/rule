@@ -1,22 +1,4 @@
 spring:
-
-  ##数据库连接信息
-  datasource:
-    url: jdbc:mysql://localhost:3306/rule?useUnicode=true&characterEncoding=UTF-8
-    username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    type: com.alibaba.druid.pool.DruidDataSource
-    dbcp2:
-      min-idle: 2         #数据库连接池的最小维持连接数
-      initial-size: 2     #初始化提供的连接数
-      max-total: 2          #最大的连接数
-      max-wait-millis: 200        #等待连接获取的最大超时时间
-  jpa:
-    database: MySQL
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
-    show-sql: true
-    hibernate:
-      ddl-auto: update
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  profiles:
+#    active: prod
+    active: dev
