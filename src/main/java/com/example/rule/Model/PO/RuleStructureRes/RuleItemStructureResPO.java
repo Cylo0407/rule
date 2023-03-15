@@ -27,6 +27,9 @@ public class RuleItemStructureResPO implements Serializable, RuleStructureResPO 
     @Column(name = "id")
     private Integer id; //内规条例切分的主键
 
+    @Column(name = "department")
+    private String department; //内规所属部门
+
     @Column(name = "title")
     private String title; //内规标题
 
@@ -42,7 +45,7 @@ public class RuleItemStructureResPO implements Serializable, RuleStructureResPO 
     @Override
     public MatchesBody toMatchesBody(Map<Integer, Double> sims) {
         Double similarity = sims.get(this.id);
-        return new MatchesBody(similarity, this.id, this.title, this.text, 0);
+        return new MatchesBody(similarity, this.id, this.department, this.title, this.text, 0);
     }
 
 
