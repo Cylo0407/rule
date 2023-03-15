@@ -12,25 +12,25 @@ import java.util.Objects;
 
 public class ReTagUtil {
     public static void main(String[] args) throws Exception {
-        ReTagUtil.reTag(PathConfig.interpretationJsonPath, PathConfig.excelPath);
+        ReTagUtil.reTag(PathConfig.interpretationJsonPath, PathConfig.taggedJsonPath);
     }
 
     /**
      * 对生成的新列表重新标记
      *
      * @param jsonDirPath   存放未处理json结果的文件夹
-     * @param excelFilePath 候选结果列表.xls
+     * @param taggedJsonPath 候选结果.json
      */
-    public static void reTag(String jsonDirPath, String excelFilePath) throws Exception {
+    public static void reTag(String jsonDirPath, String taggedJsonPath) throws Exception {
         File jsonDir = new File(jsonDirPath);
         File[] jsonDirList = jsonDir.listFiles();
         for (File f : Objects.requireNonNull(jsonDirList)) {
-            //1.从候选结果excel文件中读取出标记数据
-            List<MatchResVO> excelList = FileFormatConversionUtil.readExcel(new File(excelFilePath));
+            //1.从候选结果json文件中读取出标记数据
+            List<MatchResVO> taggedList = FileFormatConversionUtil.readJson(new File(taggedJsonPath));
             //2.从未处理json文件中读取出结果列表
             MatchResVO matchResVO = readSourceJson(f);
             //3.对结果列表进行标记
-            for (MatchResVO mrv : excelList) {
+            for (MatchResVO mrv : taggedList) {
                 String name1 = matchResVO.getInput_fileName().trim();
                 String name2 = mrv.getInput_fileName().trim();
                 if (!name1.equals(name2)) {

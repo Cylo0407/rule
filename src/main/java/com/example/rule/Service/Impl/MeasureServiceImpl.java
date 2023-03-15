@@ -18,7 +18,7 @@ public class MeasureServiceImpl implements MeasureService {
     public void doMeasure(String granularity) {
         try {
             // 拿到上一个生成json的文件夹并重新标记
-            ReTagUtil.reTag(PathConfig.interpretationJsonPath + granularity, PathConfig.excelPath);
+            ReTagUtil.reTag(PathConfig.interpretationJsonPath + granularity, PathConfig.taggedJsonPath);
             MeasureUtil.measure(IOUtil.getTargetFile(PathConfig.interpretationJsonPath + granularity));
             IOUtil.clearTermsInfoCache();
         } catch (Exception e) {

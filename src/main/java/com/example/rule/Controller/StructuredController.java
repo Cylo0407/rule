@@ -38,7 +38,7 @@ public class StructuredController {
             String fileName = rule.getName();
             if (rule.isFile() && (fileName.endsWith(".doc") || fileName.endsWith(".docx"))) {
                 List<String> texts = IOUtil.readWordLines(rule);
-                structuredService.structureRules(texts, fileName.substring(0, fileName.lastIndexOf(".")));
+                structuredService.structureRules(texts, PathConfig.getFileMainName(fileName));
             }
         }
     }

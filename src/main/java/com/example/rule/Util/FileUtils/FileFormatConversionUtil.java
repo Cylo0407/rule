@@ -47,7 +47,7 @@ public class FileFormatConversionUtil {
                 Double similarity = ((NumberCell) sheet.getCell(1, i)).getValue();
                 String rule_fileName = sheet.getCell(2, i).getContents();
                 String rule_text = sheet.getCell(3, i).getContents();
-                MatchesBody matchesBody = new MatchesBody(similarity, null, rule_fileName, rule_text, relevance);
+                MatchesBody matchesBody = new MatchesBody(similarity, null,null, rule_fileName, rule_text, relevance);
                 matchesBodyList.add(matchesBody);
             }
             MatchResVO matchResVO = new MatchResVO();
@@ -126,7 +126,7 @@ public class FileFormatConversionUtil {
     public static void main(String[] args) {
         try {
 //            jsonFileToExcelFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.txt"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.xls");
-            excelFileToJsonFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果_1128.xls"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果2.txt");
+            excelFileToJsonFile(new File("F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果_1128.xls"), "F:\\DataSet\\银行内规项目数据集\\候选结果集\\候选结果.json");
         } catch (IOException | BiffException e) {
             throw new RuntimeException(e);
         }
