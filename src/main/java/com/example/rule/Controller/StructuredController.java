@@ -24,21 +24,21 @@ public class StructuredController {
     public boolean structureRules() {
         String filePath = PathConfig.rulesPath;
         File dir = new File(filePath);
-        structure(dir);
+        structure(dir, "");
         return true;
     }
 
-    private void structure(File rule) {
+    private void structure(File rule, String department) {
         if (rule.isDirectory()) {
             File[] fs = rule.listFiles();
             for (File f : Objects.requireNonNull(fs)) {
-                structure(f);
+                structure(f, rule.getName());
             }
         } else {
             String fileName = rule.getName();
             if (rule.isFile() && (fileName.endsWith(".doc") || fileName.endsWith(".docx"))) {
                 List<String> texts = IOUtil.readWordLines(rule);
-                structuredService.structureRules(texts, PathConfig.getFileMainName(fileName));
+                structuredService.structureRules(texts, PathConfig.getFileMainName(fileName), department);
             }
         }
     }

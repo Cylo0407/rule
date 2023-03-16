@@ -138,6 +138,7 @@ public class FilePreprocessUtil {
             tmpLine = tmpLine.replaceAll("\\s", "");
             String mark = "第" + arabicNumToChineseNum(index) + "条";
             if (tmpLine.startsWith("第" + arabicNumToChineseNum(chapter) + "章")) {
+                // TODO 如果不去掉附则会怎么样
                 if (tmpLine.endsWith("附则")) {
                     System.out.println("delete 附则");
                     break;

@@ -91,7 +91,7 @@ public class TermProcessingUtil {
             termsFrequency.put(t.word, tFreq);
         }
         ArrayList<TermBody> termBodyList = new ArrayList<>(termsFrequency.values());
-//         计算一条内规的总词数
+//        计算一条内规的总词数
 //        int termsNum = 0;
 //        for (TermBody termBody : termBodyList) {
 //            termsNum += termBody.getFreq();

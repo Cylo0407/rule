@@ -114,10 +114,7 @@ public class IOUtil {
      */
     public static File getTargetFile(String filePath) {
         File file = new File(filePath);
-        File dir = file.getParentFile();
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        IOUtil.getTargetDir(file.getParentFile());
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -126,6 +123,12 @@ public class IOUtil {
             }
         }
         return file;
+    }
+
+    public static void getTargetDir(File dir) {
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
     }
 
 
