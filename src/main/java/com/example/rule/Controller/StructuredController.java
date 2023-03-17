@@ -4,6 +4,7 @@ package com.example.rule.Controller;
 import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Service.StructuredService;
 import com.example.rule.Util.IOUtil;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,25 +23,14 @@ public class StructuredController {
 
     @PostMapping("/rule")
     public boolean structureRules() {
-        String filePath = PathConfig.rulesPath;
-        File dir = new File(filePath);
-        structure(dir, "");
+        structuredService.structureRules();
         return true;
     }
 
-    private void structure(File rule, String department) {
-        if (rule.isDirectory()) {
-            File[] fs = rule.listFiles();
-            for (File f : Objects.requireNonNull(fs)) {
-                structure(f, rule.getName());
-            }
-        } else {
-            String fileName = rule.getName();
-            if (rule.isFile() && (fileName.endsWith(".doc") || fileName.endsWith(".docx"))) {
-                List<String> texts = IOUtil.readWordLines(rule);
-                structuredService.structureRules(texts, PathConfig.getFileMainName(fileName), department);
-            }
-        }
+    @PostMapping("/rule/{granularity}")
+    public boolean structureRulesWithGranularity(@PathVariable String granularity) {
+        structuredService.structureRulesWithGranularity(granularity);
+        return true;
     }
 
     @PostMapping("/input/Interpretation")

@@ -52,6 +52,6 @@ public class RuleArticleStructureResPO implements Serializable, RuleStructureRes
         if (this.getText() == null) {
             return new ArrayList<>();
         }
-        return TermProcessingUtil.calTermFreq(this.getTitle() + this.getText());
+        return TermProcessingUtil.calTermFreq(this.getText());
     }
 }

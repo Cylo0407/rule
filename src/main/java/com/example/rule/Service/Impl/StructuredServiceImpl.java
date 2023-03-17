@@ -4,19 +4,26 @@ import com.example.rule.Dao.*;
 import com.example.rule.Dao.TopLaws.TopLawsOfInterpretationRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfPenaltyCaseRepository;
 import com.example.rule.Dao.TopLaws.TopLawsOfRuleRepository;
+import com.example.rule.Model.Config.PathConfig;
 import com.example.rule.Model.PO.*;
 import com.example.rule.Model.PO.RuleStructureRes.RuleArticleStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleChapterStructureResPO;
 import com.example.rule.Model.PO.RuleStructureRes.RuleItemStructureResPO;
+import com.example.rule.Model.PO.RuleStructureRes.RuleStructureResPO;
 import com.example.rule.Model.PO.TopLaws.TopLawsOfRulePO;
+import com.example.rule.Service.Strategy.StructuredGranularityStrategy.StructuredStrategy;
 import com.example.rule.Service.StructuredService;
 import com.example.rule.Util.FileUtils.FilePreprocessUtil;
+import com.example.rule.Util.IOUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,20 +50,68 @@ public class StructuredServiceImpl implements StructuredService {
     @Resource
     TopLawsOfInterpretationRepository topLawsOfInterpretationRepository;
 
+    private JpaRepository<? extends RuleStructureResPO, Integer> repository;
+    private StructuredStrategy strategy;
     private int itemId = 1;
     private int chapterId = 1;
     private int articleId = 1;
-
     private int interpretationId = 1;
+
+
+    private void structure(File rule, String department) {
+        if (rule.isDirectory()) {
+            File[] fs = rule.listFiles();
+            for (File f : Objects.requireNonNull(fs)) {
+                this.structure(f, rule.getName());
+            }
+        } else {
+            String fileName = rule.getName();
+            if (rule.isFile() && (fileName.endsWith(".doc") || fileName.endsWith(".docx"))) {
+                List<String> texts = IOUtil.readWordLines(rule);
+                this.useStructure(texts, PathConfig.getFileMainName(fileName), department);
+            }
+        }
+    }
+
+    @Override
+    public void structureRulesWithGranularity(String granularity) {
+        try {
+            this.setStrategy((StructuredStrategy) Class.forName(
+                    "com.example.rule.Service.Strategy.StructuredGranularityStrategy." +
+                            granularity + "StructuredStrategy").newInstance()
+            );
+            Field repositoryField = this.getClass().getDeclaredField(
+                    "rule" + StringUtils.capitalize(granularity) + "StructureRepository"
+            );
+            Object repo = repositoryField.get(this);
+            this.repository = this.ruleItemStructureRepository;
+            if (repo instanceof JpaRepository) {
+                this.repository = (JpaRepository<? extends RuleStructureResPO, Integer>) repo;
+            }
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+        String filePath = PathConfig.rulesPath;
+        File dir = new File(filePath);
+        this.structure(dir, "");
+    }
 
     /**
      * 结构化内规并提取上位法
-     *
-     * @param texts doc文本
-     * @return true
      */
     @Override
-    public boolean structureRules(List<String> texts, String title, String department) {
+    public void structureRules() {
+        structureRulesWithGranularity("Item");
+        structureRulesWithGranularity("Chapter");
+        structureRulesWithGranularity("Article");
+    }
+
+    public void useStructure(List<String> texts, String title, String department) {
+        List<? extends RuleStructureResPO> textsSegmentPOs = this.strategy.segmentTextsToPOs(texts, title, department);
+        this.strategy.saveAll(this.repository, textsSegmentPOs);
+    }
+
+    public boolean doStructure(List<String> texts, String title, String department) {
         // 拿取所有切分后的内规文本
         List<Pair<String, Integer>> splitRulesInfo = FilePreprocessUtil.split(texts);
 
@@ -332,4 +387,19 @@ public class StructuredServiceImpl implements StructuredService {
         }
     }
 
+    public StructuredStrategy getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(StructuredStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public JpaRepository getRepository() {
+        return repository;
+    }
+
+    public void setRepository(JpaRepository repository) {
+        this.repository = repository;
+    }
 }

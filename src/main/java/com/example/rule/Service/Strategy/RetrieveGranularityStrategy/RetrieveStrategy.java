@@ -11,7 +11,7 @@ import java.util.Map;
 
 public interface RetrieveStrategy {
 
-    List<? extends RuleStructureResPO> findAll(JpaRepository jpaRepository);
+    List<? extends RuleStructureResPO> findAll(JpaRepository<? extends RuleStructureResPO, Integer> jpaRepository);
 
     /**
      * 获取tf-idf列表

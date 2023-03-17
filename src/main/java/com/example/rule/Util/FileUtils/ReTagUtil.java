@@ -12,13 +12,18 @@ import java.util.Objects;
 
 public class ReTagUtil {
     public static void main(String[] args) throws Exception {
-        ReTagUtil.reTag(PathConfig.interpretationJsonPath, PathConfig.taggedJsonPath);
+        ReTagUtil.reTag(PathConfig.interpretationJsonPath + "Article", PathConfig.taggedJsonPath);
     }
+
+    public static String cleansedString(String text) {
+        return text.replaceAll("\n", "").replaceAll("\\s+", " ");
+    }
+
 
     /**
      * 对生成的新列表重新标记
      *
-     * @param jsonDirPath   存放未处理json结果的文件夹
+     * @param jsonDirPath    存放未处理json结果的文件夹
      * @param taggedJsonPath 候选结果.json
      */
     public static void reTag(String jsonDirPath, String taggedJsonPath) throws Exception {
@@ -41,7 +46,7 @@ public class ReTagUtil {
                 List<String> relevanceRules = new ArrayList<>();
                 for (MatchesBody mb : mrv.getRuleMatchRes()) {
                     if (mb.getRelevance() == 1) {
-                        relevanceRules.add(mb.getRule_text());
+                        relevanceRules.add(cleansedString(mb.getRule_text()));
                     }
                 }
 

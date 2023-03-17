@@ -19,7 +19,7 @@ import java.util.Map;
 public class ChapterRetrieveStrategy implements RetrieveStrategy {
 
     @Override
-    public List<? extends RuleStructureResPO> findAll(JpaRepository ruleChapterStructureRepository) {
+    public List<? extends RuleStructureResPO> findAll(JpaRepository<? extends RuleStructureResPO, Integer> ruleChapterStructureRepository) {
         return ((RuleChapterStructureRepository) ruleChapterStructureRepository).findAll();
     }
 

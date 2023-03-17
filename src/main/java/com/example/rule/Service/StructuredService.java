@@ -1,14 +1,14 @@
 package com.example.rule.Service;
 
-import java.util.List;
-
 public interface StructuredService {
+
+    void structureRulesWithGranularity(String granularity);
+
     /**
      * 结构化内规
      *
-     * @param texts doc文本
      */
-    boolean structureRules(List<String> texts, String title, String department);
+    void structureRules();
 
     /**
      * 结构化指定数目的处罚案例文本

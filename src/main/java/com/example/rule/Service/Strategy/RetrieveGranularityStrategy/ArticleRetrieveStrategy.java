@@ -18,7 +18,7 @@ import java.util.Map;
 public class ArticleRetrieveStrategy implements RetrieveStrategy {
 
     @Override
-    public List<? extends RuleStructureResPO> findAll(JpaRepository ruleArticleStructureRepository) {
+    public List<? extends RuleStructureResPO> findAll(JpaRepository<? extends RuleStructureResPO, Integer> ruleArticleStructureRepository) {
         return ((RuleArticleStructureRepository) ruleArticleStructureRepository).findAll();
     }
 
